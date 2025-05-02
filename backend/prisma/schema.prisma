@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String     @id @default(uuid())
+  name        String
+  email       String     @unique
+  password    String
+  role        UserRole
+  storeId     String?
+  store       Store?     @relation(fields: [storeId], references: [id])
+  sales       Sale[]     // Relaciona vendas feitas pelo usuário (caixa)
+  stockMovements StockMovement[] // Movimentações de estoque realizadas pelo usuário
+  cashRegisters CashRegister[] // Relaciona os registros de caixa
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  CAIXA
+  ESTOQUISTA
+}
+
+model Store {
+  id        String     @id @default(uuid())
+  name      String
+  terminals Terminal[] // Relaciona terminais da loja
+  users     User[]     // Usuários (caixas, admins) que pertencem à loja
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Terminal {
+  id        String    @id @default(uuid())
+  name      String
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id])
+  sales     Sale[]    // Vendas feitas nesse terminal
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  products  Product[]  // Produtos dessa categoria
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Product {
+  id            String        @id @default(uuid())
+  name          String
+  barcode       String?       @unique
+  price         Float
+  imageUrl      String?
+  stock         Int
+  categoryId    String?
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  salesItems    SaleItem[]    // Relaciona itens de vendas
+  stockMovements StockMovement[] // Movimentações de estoque do produto
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model StockMovement {
+  id          String           @id @default(uuid())
+  productId   String
+  product     Product          @relation(fields: [productId], references: [id])
+  type        StockMovementType
+  quantity    Int
+  userId      String?
+  user        User?            @relation(fields: [userId], references: [id])
+  createdAt   DateTime         @default(now())
+}
+
+enum StockMovementType {
+  ENTRADA
+  SAIDA
+  AJUSTE
+  VENDA
+}
+
+model Client {
+  id        String     @id @default(uuid())
+  name      String
+  cpf       String?    @unique
+  phone     String?
+  sales     Sale[]     // Vendas feitas por este cliente
+  loyalty   LoyaltyPoint[] // Pontos de fidelidade acumulados
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model LoyaltyPoint {
+  id        String     @id @default(uuid())
+  clientId  String
+  client    Client     @relation(fields: [clientId], references: [id])
+  points    Int
+  reason    String
+  createdAt DateTime   @default(now())
+}
+
+model Sale {
+  id            String        @id @default(uuid())
+  clientId      String?
+  client        Client?       @relation(fields: [clientId], references: [id])
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  terminalId    String?
+  terminal      Terminal?     @relation(fields: [terminalId], references: [id])
+  total         Float
+  paymentMethod PaymentMethod
+  status        SaleStatus    @default(FINALIZADA)
+  synced        Boolean       @default(true)
+  items         SaleItem[]    // Relaciona itens vendidos na venda
+  createdAt     DateTime      @default(now())
+  fiscalDocument FiscalDocument? // Relaciona o documento fiscal (se houver)
+}
+
+enum SaleStatus {
+  EM_ANDAMENTO
+  FINALIZADA
+  CANCELADA
+}
+
+model SaleItem {
+  id        String   @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  price     Float
+  product   Product  @relation(fields: [productId], references: [id])
+  sale      Sale     @relation(fields: [saleId], references: [id])
+}
+
+enum PaymentMethod {
+  DINHEIRO
+  PIX
+  CARTAO
+}
+
+model CashRegister {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  openedAt      DateTime
+  closedAt      DateTime?
+  openingAmount Float
+  closingAmount Float?
+  transactions  CashTransaction[] // Relaciona transações feitas no caixa
+}
+
+model CashTransaction {
+  id           String   @id @default(uuid())
+  type         CashTransactionType
+  amount       Float
+  description  String?
+  createdAt    DateTime @default(now())
+  registerId   String
+  register     CashRegister @relation(fields: [registerId], references: [id])
+}
+
+enum CashTransactionType {
+  ABERTURA
+  FECHAMENTO
+  VENDA
+  SANGRIA
+  SUPRIMENTO
+}
+
+model FiscalDocument {
+  id        String   @id @default(uuid())
+  saleId    String   @unique
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  status    String
+  receiptUrl String?
+  createdAt DateTime @default(now())
+}
