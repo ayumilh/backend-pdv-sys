@@ -60,13 +60,38 @@ model Product {
   price         Float
   imageUrl      String?
   stock         Int
+  weight        Float?        // Peso do produto, caso aplicável
   categoryId    String?
   category      Category?     @relation(fields: [categoryId], references: [id])
   salesItems    SaleItem[]    // Relaciona itens de vendas
   stockMovements StockMovement[] // Movimentações de estoque do produto
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  Weighing Weighing[]
 }
+
+model Scale {
+  id        String   @id @default(uuid())
+  name      String   // Nome ou identificação da balança
+  model     String   // Modelo da balança
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  weighings  Weighing[] // Relacionamento reverso com Weighing
+}
+
+
+model Weighing {
+  id        String   @id @default(uuid())
+  scaleId   String
+  scale     Scale    @relation(fields: [scaleId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  weight    Float    // Peso do produto medido pela balança
+  createdAt DateTime @default(now())
+  saleItems SaleItem[] // Relacionamento reverso com SaleItem
+}
+
 
 model StockMovement {
   id          String           @id @default(uuid())
@@ -137,7 +162,11 @@ model SaleItem {
   price     Float
   product   Product  @relation(fields: [productId], references: [id])
   sale      Sale     @relation(fields: [saleId], references: [id])
+  weight    Float?   // Peso registrado na venda, caso o item seja pesado na balança
+  weighingId String? // Relaciona a pesagem, se houver
+  weighing  Weighing? @relation(fields: [weighingId], references: [id]) // Define a relação corretamente
 }
+
 
 enum PaymentMethod {
   DINHEIRO

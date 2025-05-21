@@ -1,1 +1,0 @@
--- recuperação manual da migração add_cliente_id
