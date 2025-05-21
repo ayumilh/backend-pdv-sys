@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.js",
+      "src": "server.ts",
       "use": "@vercel/node",
       "config": {
         "includeFiles": ["prisma/schema.prisma", "prisma/.env"]
@@ -16,6 +16,6 @@
     }
   ],
   "env": {
-    "DATABASE_URL": "postgres://neondb_owner:npg_rj4sUk5fzvCy@ep-autumn-boat-a4czgpix-pooler.us-east-1.aws.neon.tech/neondb?sslmode=requireNODE_ENV=development"
+    "DATABASE_URL": "postgres://neondb_owner:npg_rj4sUk5fzvCy@ep-autumn-boat-a4czgpix-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require"
   }
 }
