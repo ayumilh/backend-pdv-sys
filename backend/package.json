@@ -11,7 +11,7 @@
     "postinstall": "prisma generate"
   },
   "prisma": {
-    "schema": "./src/prisma/schema.prisma"
+    "schema": "./prisma/schema.prisma"
   },
   "_moduleAliases": {
     "@": "src"
