@@ -2,9 +2,9 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "baseUrl": "./src",  // Isso define a raiz do seu projeto como a pasta src
+    "baseUrl": ".",  // Isso define a raiz do seu projeto como a pasta src
     "paths": {
-      "@/*": ["*"]  // Isso define o alias '@' para apontar para qualquer coisa dentro da pasta src
+      "@/*": ["src/*"]
     },
     "moduleResolution": "node",
     "esModuleInterop": true,
