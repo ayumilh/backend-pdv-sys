@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { prisma } from "@/prisma/prismaClient";
+import { prisma } from "../../prisma/prismaClient"; // Ajuste o caminho conforme necessário
 import { AuthenticatedRequest } from "@/middleware/authMiddleware";
 
 export const getAuthenticatedUser = async (

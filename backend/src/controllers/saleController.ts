@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { prisma } from "@/prisma/prismaClient";
+import { prisma } from "../../prisma/prismaClient"; // Ajuste o caminho conforme necessário
 
 // Criar nova venda
 export const createSale = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
