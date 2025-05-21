@@ -10,9 +10,6 @@
     "dev": "nodemon server.ts",
     "postinstall": "prisma generate"
   },
-  "prisma": {
-    "schema": "./prisma/schema.prisma"
-  },
   "_moduleAliases": {
     "@": "src"
   },
