@@ -2,13 +2,13 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/server.ts",
+      "src": "server.ts",
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
           "src/prisma/schema.prisma",
           "src/prisma/migrations/**",
-          "src/.env"
+          ".env"
         ]
       }
     }
@@ -16,7 +16,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/server.ts"
+      "dest": "server.ts"
     }
   ],
   "env": {
