@@ -5,13 +5,13 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import authMiddleware from "./src/middleware/authMiddleware"; // Corrija o caminho conforme necessário
-import errorMiddleware from "./src/middleware/errorMiddleware";  // Corrija o caminho conforme necessário
+import authMiddleware from "@/middleware/authMiddleware"; // Corrija o caminho conforme necessário
+import errorMiddleware from "@/middleware/errorMiddleware";  // Corrija o caminho conforme necessário
 
-import saleRoutes from "./src/routes/saleRoutes";
-import authRoutes from "./src/routes/authRoutes"; // Corrija o caminho conforme necessário
-import clientsRoutes from "./src/routes/clientRoutes"; // Corrija o caminho conforme necessário
-import userRoutes from "./src/routes/userRoutes"; // Corrija o caminho conforme necessário
+import saleRoutes from "@/routes/saleRoutes";
+import authRoutes from "@/routes/authRoutes"; // Corrija o caminho conforme necessário
+import clientsRoutes from "@/routes/clientRoutes"; // Corrija o caminho conforme necessário
+import userRoutes from "@/routes/userRoutes"; // Corrija o caminho conforme necessário
 
 const app = express();
 
