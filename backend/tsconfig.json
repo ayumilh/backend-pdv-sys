@@ -11,7 +11,8 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": ["src", "server.ts", "prisma"]
+  "include": ["src", "server.ts", "prisma", "types"]
 }

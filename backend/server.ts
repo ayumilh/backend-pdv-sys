@@ -5,13 +5,13 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import authMiddleware from "@/middleware/authMiddleware"; // Corrija o caminho conforme necessário
+import { authMiddleware } from "@/middleware/authMiddleware"; // Corrija o caminho conforme necessário
 import errorMiddleware from "@/middleware/errorMiddleware";  // Corrija o caminho conforme necessário
 
-import saleRoutes from "@/routes/saleRoutes";
 import authRoutes from "@/routes/authRoutes"; // Corrija o caminho conforme necessário
 import clientsRoutes from "@/routes/clientRoutes"; // Corrija o caminho conforme necessário
 import userRoutes from "@/routes/userRoutes"; // Corrija o caminho conforme necessário
+import productsRoutes from "@/routes/productRoutes"; // Corrija o caminho conforme necessário
 
 const app = express();
 
@@ -36,8 +36,8 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use('/api/userauth', authRoutes, userRoutes);
-app.use("/api/sale", authMiddleware, saleRoutes);
 app.use("/api/clients", authMiddleware, clientsRoutes);
+app.use("/api/products", authMiddleware, productsRoutes);
 
 const PORT = process.env.PORT || 3001;
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import bcrypt from "bcryptjs";
+import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
 import dotenv from 'dotenv';
 import { prisma } from "../../prisma/prismaClient"; // Ajuste o caminho conforme necessário
@@ -7,7 +7,7 @@ import { prisma } from "../../prisma/prismaClient"; // Ajuste o caminho conforme
 dotenv.config();
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { name, email, password, role, storeId } = req.body;
+  const { name, email, password, role } = req.body;
 
   try {
     // Verificar se o email já está em uso
@@ -32,7 +32,6 @@ export const register = async (req: Request, res: Response, next: NextFunction):
         email,
         password: hashedPassword,
         role,
-        storeId, // Pode ser nulo se o usuário não pertencer a uma loja específica
       },
     });
 
@@ -45,7 +44,6 @@ export const register = async (req: Request, res: Response, next: NextFunction):
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
-        storeId: newUser.storeId,
       },
     });
   } catch (error) {
@@ -81,7 +79,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     const token = jwt.sign(
-      { id: user.id, role: user.role, storeId: user.storeId },
+      { id: user.id, role: user.role, name: user.name},
       jwtSecret,
       { expiresIn: "8h" }
     );
@@ -98,7 +96,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         id: user.id,
         name: user.name,
         role: user.role,
-        storeId: user.storeId,
         token,
       },
     });

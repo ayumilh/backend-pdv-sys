@@ -1,36 +1,35 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction, Request } from "express";
 import jwt from "jsonwebtoken";
 import { UserRole } from "@prisma/client";
 
 const secretKey = process.env.JWT_SECRET as string;
 
-interface DecodedToken {
+interface TokenPayload {
   id: string;
-  email: string;
+  name: string;
+  email?: string;
   role: UserRole;
-  [key: string]: any;
 }
 
-// Extensão do tipo Request para incluir o usuário autenticado
-export interface AuthenticatedRequest extends Request {
-  usuario?: DecodedToken;
-}
-
-const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+// Solução correta aqui
+export const authMiddleware = (
+  req: Request & { usuario?: TokenPayload }, // 👈 AQUI
+  res: Response,
+  next: NextFunction
+): void => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(" ")[1];
 
   if (!token) {
-    return next({ statusCode: 401, message: "Token não fornecido." });
+    res.status(401).json({ message: "Token não fornecido." });
+    return;
   }
 
   try {
-    const decoded = jwt.verify(token, secretKey) as DecodedToken;
+    const decoded = jwt.verify(token, secretKey) as TokenPayload;
     req.usuario = decoded;
     next();
-  } catch (error) {
-    return next({ statusCode: 401, message: "Token inválido." });
+  } catch {
+    res.status(401).json({ message: "Token inválido." });
   }
 };
-
-export default authMiddleware;
