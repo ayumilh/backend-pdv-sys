@@ -94,10 +94,16 @@ export const updateProduct = async (
 
 export const deleteProduct = async (id: string): Promise<boolean> => {
   const existing = await prisma.product.findUnique({ where: { id } });
-
   if (!existing) return false;
 
+  // Exclui todas as movimentações de estoque relacionadas
+  await prisma.stockMovement.deleteMany({
+    where: { productId: id },
+  });
+
+  // Agora pode deletar o produto com segurança
   await prisma.product.delete({ where: { id } });
 
   return true;
 };
+
