@@ -1,12 +1,12 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "server.ts",
   "author": "ayumilh",
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node server.ts",
     "dev": "nodemon server.ts",
     "build": "tsc",
     "postinstall": "prisma generate"
