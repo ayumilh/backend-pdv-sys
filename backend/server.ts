@@ -6,12 +6,12 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 
-import authRoutes from "@/modules/auth/auth.routes";
-import clientsRoutes from "@/modules/client/client.routes";
-import userRoutes from "@/modules/user/user.routes";
-import productsRoutes from "@/modules/product/product.routes";
-import categorysRoutes from "@/modules/category/category.routes";
-import stockRoutes from "@/modules/stock/stock.routes";
+import authRoutes from "./src/modules/auth/auth.routes";
+import clientsRoutes from "./src/modules/client/client.routes";
+import userRoutes from "./src/modules/user/user.routes";
+import productsRoutes from "./src/modules/product/product.routes";
+import categorysRoutes from "./src/modules/category/category.routes";
+import stockRoutes from "./src/modules/stock/stock.routes";
 
 const app = express();
 
