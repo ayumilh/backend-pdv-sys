@@ -5,8 +5,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import { authMiddleware } from "@/shared/middleware/authMiddleware";
-import errorMiddleware from "@/shared/middleware/errorMiddleware";
+import errorMiddleware from "./src/shared/middleware/errorMiddleware";
 
 import authRoutes from "@/modules/auth/auth.routes";
 import clientsRoutes from "@/modules/client/client.routes";
