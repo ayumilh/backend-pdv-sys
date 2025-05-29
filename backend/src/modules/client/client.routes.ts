@@ -5,7 +5,7 @@ import {
   getClientById,
   updateClient,
   deleteClient
-} from "@/controllers/clientController";
+} from "./client.controller";
 
 const router = express.Router();
 // Rotas

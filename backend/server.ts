@@ -5,13 +5,15 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import { authMiddleware } from "@/middleware/authMiddleware"; // Corrija o caminho conforme necessário
-import errorMiddleware from "@/middleware/errorMiddleware";  // Corrija o caminho conforme necessário
+import { authMiddleware } from "@/shared/middleware/authMiddleware";
+import errorMiddleware from "@/shared/middleware/errorMiddleware";
 
-import authRoutes from "@/routes/authRoutes"; // Corrija o caminho conforme necessário
-import clientsRoutes from "@/routes/clientRoutes"; // Corrija o caminho conforme necessário
-import userRoutes from "@/routes/userRoutes"; // Corrija o caminho conforme necessário
-import productsRoutes from "@/routes/productRoutes"; // Corrija o caminho conforme necessário
+import authRoutes from "@/modules/auth/auth.routes";
+import clientsRoutes from "@/modules/client/client.routes";
+import userRoutes from "@/modules/user/user.routes";
+import productsRoutes from "@/modules/product/product.routes";
+import categorysRoutes from "@/modules/category/category.routes";
+import stockRoutes from "@/modules/stock/stock.routes";
 
 const app = express();
 
@@ -36,8 +38,10 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use('/api/userauth', authRoutes, userRoutes);
-app.use("/api/clients", authMiddleware, clientsRoutes);
-app.use("/api/products", authMiddleware, productsRoutes);
+app.use("/api/clients", clientsRoutes);
+app.use("/api/products", productsRoutes);
+app.use("/api/categories", categorysRoutes);
+app.use("/api/stock", stockRoutes);
 
 const PORT = process.env.PORT || 3001;
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { login, register } from "@/controllers/authControllers"; // Corrija o caminho conforme necessário"
+import { login, register } from "./auth.controller"; // Corrija o caminho conforme necessário"
 
 const router = express.Router();
 

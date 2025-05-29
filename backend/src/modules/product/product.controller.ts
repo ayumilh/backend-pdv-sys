@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import * as productService from "../services/productService";
+import * as productService from "./product.service";
 
 interface UsuarioDecoded {
   id: string;
@@ -16,8 +16,6 @@ export const listProducts = async (
 ) => {
   try {
     const usuario = req.usuario;
-
-    console.log("Usuario:", usuario);
 
     if (!usuario || (usuario.role !== "ADMIN" && usuario.role !== "ESTOQUISTA" && usuario.role !== "CAIXA")) {
       res.status(403).json({ message: "Você não tem permissão para visualizar produtos." });
@@ -86,6 +84,7 @@ export const createProduct = async (
       barcode,
       imageUrl,
       weight,
+      userId: usuario.id,
     });
 
     res.status(201).json(newProduct);
@@ -93,6 +92,7 @@ export const createProduct = async (
     next(error);
   }
 };
+
 
 // Atualiza produto
 export const updateProduct = async (
@@ -110,6 +110,34 @@ export const updateProduct = async (
 
     const updated = await productService.updateProduct(req.params.id, req.body);
     res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Deleta produto
+export const deleteProduct = async (
+  req: Request & { usuario?: UsuarioDecoded },
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const usuario = req.usuario;
+
+    if (!usuario || (usuario.role !== "ADMIN" && usuario.role !== "ESTOQUISTA")) {
+      res.status(403).json({ message: "Você não tem permissão para deletar produtos." });
+      return;
+    }
+
+    const { id } = req.params;
+    const deleted = await productService.deleteProduct(id);
+
+    if (!deleted) {
+      res.status(404).json({ message: "Produto não encontrado ou já deletado." });
+      return;
+    }
+
+    res.status(200).json({ message: "Produto deletado com sucesso." });
   } catch (error) {
     next(error);
   }
