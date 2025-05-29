@@ -5,7 +5,6 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import errorMiddleware from "./src/shared/middleware/errorMiddleware";
 
 import authRoutes from "@/modules/auth/auth.routes";
 import clientsRoutes from "@/modules/client/client.routes";
@@ -44,7 +43,6 @@ app.use("/api/stock", stockRoutes);
 
 const PORT = process.env.PORT || 3001;
 
-app.use(errorMiddleware);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
