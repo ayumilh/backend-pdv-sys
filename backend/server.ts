@@ -13,6 +13,8 @@ import productsRoutes from "./src/modules/product/product.routes";
 import categorysRoutes from "./src/modules/category/category.routes";
 import stockRoutes from "./src/modules/stock/stock.routes";
 
+import { errorMiddleware } from "./src/shared/middleware/errorMiddleware";
+
 const app = express();
 
 // Middlewares
@@ -40,6 +42,9 @@ app.use("/api/clients", clientsRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", categorysRoutes);
 app.use("/api/stock", stockRoutes);
+
+
+app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3001;
 

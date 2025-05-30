@@ -1,7 +1,7 @@
 import { UserRole } from "@prisma/client";
 
 declare module "express" {
-  export interface Request {
+  interface Request {
     usuario?: {
       id: string;
       name: string;

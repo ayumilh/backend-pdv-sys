@@ -4,9 +4,11 @@ import { authMiddleware } from '../../shared/middleware/authMiddleware';
 
 const router = Router();
 
-router.get('/', authMiddleware, controller.list);
+router.use(authMiddleware); // Apply auth middleware to all routes
+
+router.get('/', controller.list);
 // router.get('/:id', authMiddleware, controller.get);
-router.post('/', authMiddleware, controller.create);
-router.put('/:id', authMiddleware, controller.update);
+router.post('/', controller.createCategory);
+router.put('/:id', controller.update);
 
 export default router;

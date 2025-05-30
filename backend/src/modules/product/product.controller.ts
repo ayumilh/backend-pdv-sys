@@ -56,7 +56,6 @@ export const getProduct = async (
   }
 };
 
-// Cria produto
 export const createProduct = async (
   req: Request & { usuario?: UsuarioDecoded },
   res: Response,
@@ -65,15 +64,15 @@ export const createProduct = async (
   try {
     const usuario = req.usuario;
 
-    if (!usuario || (usuario.role !== "ADMIN" && usuario.role !== "ESTOQUISTA")) {
-      res.status(403).json({ message: "Você não tem permissão para criar produtos." });
-      return;
+    if (!usuario || (usuario.role !== 'ADMIN' && usuario.role !== 'ESTOQUISTA')) {
+      res.status(403).json({ message: 'Você não tem permissão para criar produtos.' });
+      return
     }
 
     const { name, price, stock, barcode, imageUrl, weight } = req.body;
 
     if (!name || price == null || stock == null) {
-      res.status(400).json({ message: "Campos obrigatórios ausentes." });
+      res.status(400).json({ message: 'Campos obrigatórios ausentes.' });
       return;
     }
 
@@ -88,7 +87,12 @@ export const createProduct = async (
     });
 
     res.status(201).json(newProduct);
-  } catch (error) {
+    return;
+  } catch (error: any) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
     next(error);
   }
 };

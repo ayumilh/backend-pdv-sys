@@ -12,7 +12,7 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "strict": true,
-    "typeRoots": ["./node_modules/@types", "./types"]
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
-  "include": ["src", "server.ts", "prisma", "types"]
+  "include": ["src", "server.ts", "prisma", "src/types"]
 }

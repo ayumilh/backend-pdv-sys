@@ -41,22 +41,20 @@ type CreateProductInput = Omit<Prisma.ProductCreateInput, "id" | "createdAt" | "
 };
 
 export const createProduct = async (data: CreateProductInput): Promise<Product> => {
-  if (data.price < 0) throw new Error("Preço inválido");
-  if (data.stock < 0) throw new Error("Estoque inválido");
+  if (data.price < 0) throw new Error("Preço deve ser maior ou igual a zero.");
+  if (data.stock < 0) throw new Error("Estoque não pode ser negativo.");
 
-  // Criação do produto
   const product = await prisma.product.create({
     data: {
       name: data.name,
       price: data.price,
       stock: data.stock,
-      barcode: data.barcode,
-      imageUrl: data.imageUrl,
-      weight: data.weight,
+      barcode: data.barcode || null,
+      imageUrl: data.imageUrl || null,
+      weight: data.weight || null,
     },
   });
 
-  // Se estoque > 0, registra movimento
   if (data.stock > 0) {
     await prisma.stockMovement.create({
       data: {
