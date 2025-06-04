@@ -4,7 +4,9 @@ import {
   getProduct,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  createMovementForProduct,
+  getMovementsByProduct
 } from "./product.controller";
 import { authMiddleware } from '../../shared/middleware/authMiddleware';
 
@@ -21,5 +23,9 @@ router.post("/", createProduct);
 router.put("/:id", updateProduct);
 
 router.delete("/:id", deleteProduct);
+
+router.post('/:id/stock', createMovementForProduct);
+
+router.get('/:id/stock', getMovementsByProduct);
 
 export default router;

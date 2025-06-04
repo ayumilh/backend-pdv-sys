@@ -7,7 +7,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 
 import authRoutes from "./src/modules/auth/auth.routes";
-import clientsRoutes from "./src/modules/client/client.routes";
+import usuariosRoutes from "./src/modules/usuarios/usuarios.routes";
 import userRoutes from "./src/modules/user/user.routes";
 import productsRoutes from "./src/modules/product/product.routes";
 import categorysRoutes from "./src/modules/category/category.routes";
@@ -38,7 +38,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use('/api/userauth', authRoutes, userRoutes);
-app.use("/api/clients", clientsRoutes);
+app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", categorysRoutes);
 app.use("/api/stock", stockRoutes);

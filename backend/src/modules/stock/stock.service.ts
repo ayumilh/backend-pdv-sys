@@ -54,3 +54,36 @@ export const createMovement = async ({ productId, quantity, type, userId }: Crea
 
   return movement;
 };
+
+export const getMovementsByProduct = async (productId: string) => {
+  return prisma.stockMovement.findMany({
+    where: { productId },
+    include: {
+      user: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+};
+
+export const deleteMovement = async (id: string) => {
+  const existing = await prisma.stockMovement.findUnique({ where: { id } });
+
+  if (!existing) return null;
+
+  // desfaz o efeito no estoque
+  const quantityChange =
+    existing.type === 'ENTRADA' ? -existing.quantity : existing.quantity;
+
+  await prisma.product.update({
+    where: { id: existing.productId },
+    data: {
+      stock: {
+        increment: quantityChange,
+      },
+    },
+  });
+
+  return prisma.stockMovement.delete({ where: { id } });
+};

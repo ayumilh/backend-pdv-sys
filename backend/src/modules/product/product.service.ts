@@ -70,6 +70,7 @@ export const createProduct = async (data: CreateProductInput): Promise<Product> 
 };
 
 
+
 // Atualiza um produto
 export const updateProduct = async (
   id: string,

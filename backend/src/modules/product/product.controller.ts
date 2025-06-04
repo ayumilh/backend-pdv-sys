@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as productService from "./product.service";
+import * as stockService from "../stock/stock.service";
 
 interface UsuarioDecoded {
   id: string;
@@ -93,6 +94,56 @@ export const createProduct = async (
       res.status(400).json({ message: error.message });
       return;
     }
+    next(error);
+  }
+};
+
+export const createMovementForProduct = async (
+  req: Request & { usuario?: UsuarioDecoded },
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const usuario = req.usuario;
+
+    if (!usuario || (usuario.role !== 'ADMIN' && usuario.role !== 'ESTOQUISTA')) {
+      res.status(403).json({ message: 'Sem permissão para movimentar estoque.' });
+      return;
+    }
+
+    const { quantity, type } = req.body;
+    const productId = req.params.id;
+
+    if (!quantity || !type) {
+      res.status(400).json({ message: 'Quantidade e tipo são obrigatórios.' });
+      return;
+    }
+
+
+    const movement = await stockService.createMovement({
+      productId,
+      quantity,
+      type,
+      userId: usuario.id,
+    });
+
+    res.status(201).json(movement);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMovementsByProduct = async (
+  req: Request & { usuario?: UsuarioDecoded },
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const productId = req.params.id;
+
+    const movements = await stockService.getMovementsByProduct(productId);
+    res.json(movements);
+  } catch (error) {
     next(error);
   }
 };

@@ -24,6 +24,7 @@ export const getMovementById = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    console.log('Fetching movement with ID:', req.params.id);
     const movement = await stockService.getMovementById(req.params.id);
     if (!movement) {
       res.status(404).json({ message: 'Movimentação não encontrada' });
@@ -48,7 +49,8 @@ export const createMovement = async (
       return;
     }
 
-    const { productId, quantity, type } = req.body;
+    const productId = req.params.id;
+    const { quantity, type } = req.body;
 
     if (!productId || quantity == null || !type) {
       res.status(400).json({ message: 'Campos obrigatórios ausentes.' });
@@ -78,6 +80,36 @@ export const createMovement = async (
       res.status(400).json({ message: error.message });
       return;
     }
+    next(error);
+  }
+};
+
+
+
+
+export const deleteMovement = async (
+  req: Request & { usuario?: UsuarioDecoded },
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const usuario = req.usuario;
+
+    if (!usuario || usuario.role !== 'ADMIN') {
+      res.status(403).json({ message: 'Sem permissão para deletar movimentações.' });
+      return;
+    }
+
+    const id = req.params.id;
+    const deleted = await stockService.deleteMovement(id);
+
+    if (!deleted) {
+      res.status(404).json({ message: 'Movimentação não encontrada.' });
+      return
+    }
+
+    res.status(204).end();
+  } catch (error) {
     next(error);
   }
 };

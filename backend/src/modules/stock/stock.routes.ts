@@ -9,5 +9,6 @@ router.use(authMiddleware);
 router.get('/', stockController.listMovements);
 router.get('/:id', stockController.getMovementById);
 router.post('/', stockController.createMovement);
+router.delete('/:id', stockController.deleteMovement);
 
 export default router;
