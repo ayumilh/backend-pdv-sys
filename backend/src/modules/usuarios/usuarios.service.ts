@@ -36,6 +36,7 @@ export const userService = {
       data: updatedData,
     });
   },
+
   async getAll() {
     return await prisma.user.findMany({
       select: {
@@ -49,7 +50,6 @@ export const userService = {
     });
   },
 
-
   async getStockMovements(userId: string) {
     return await prisma.stockMovement.findMany({
       where: { userId },
@@ -60,5 +60,14 @@ export const userService = {
       },
       orderBy: { createdAt: 'desc' }
     });
+  },
+
+  async getById(id: string) {
+    return await prisma.user.findUnique({ where: { id } });
+  },
+
+  async delete(id: string) {
+    return await prisma.user.delete({ where: { id } });
   }
+
 };

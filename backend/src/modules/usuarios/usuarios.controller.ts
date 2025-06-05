@@ -1,53 +1,163 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { userService } from './usuarios.service';
 
+interface UsuarioDecoded {
+    id: string;
+    name: string;
+    email?: string;
+    role: string;
+}
+
 export const userController = {
-    async create(req: Request, res: Response) {
-        const { name, email, password, role } = req.body;
+    async create(
+        req: Request & { usuario?: UsuarioDecoded },
+        res: Response,
+        next: NextFunction
+    ) {
         try {
+            const usuario = req.usuario;
+
+            if (!usuario || usuario.role !== 'ADMIN') {
+                res.status(403).json({ message: 'Apenas administradores podem criar usuários.' });
+                return;
+            }
+
+            const { name, email, password, role } = req.body;
             const user = await userService.create({ name, email, password, role });
             res.status(201).json(user);
-            return
-        } catch (error: any) {
-            res.status(400).json({ error: error.message });
-            return
+            return;
+        } catch (error) {
+            next(error);
         }
     },
 
-    async update(req: Request, res: Response) {
-        const { id } = req.params;
-        const { name, email, password, role } = req.body;
+    async update(
+        req: Request & { usuario?: UsuarioDecoded },
+        res: Response,
+        next: NextFunction
+    ) {
         try {
+            const usuario = req.usuario;
+
+            if (!usuario || usuario.role !== 'ADMIN') {
+                res.status(403).json({ message: 'Apenas administradores podem editar usuários.' });
+                return;
+            }
+
+            const { id } = req.params;
+            const { name, email, password, role } = req.body;
             const user = await userService.update(id, { name, email, password, role });
             res.json(user);
-            return
-        } catch (error: any) {
-            res.status(400).json({ error: error.message });
-            return
+            return;
+        } catch (error) {
+            next(error);
         }
     },
 
-    
-    async getAll(req: Request, res: Response) {
+    async getAll(
+        req: Request & { usuario?: UsuarioDecoded },
+        res: Response,
+        next: NextFunction
+    ) {
         try {
+            const usuario = req.usuario;
+
+            if (!usuario || usuario.role !== 'ADMIN') {
+                res.status(403).json({ message: 'Apenas administradores podem visualizar usuários.' });
+                return;
+            }
+
             const users = await userService.getAll();
             res.json(users);
-        } catch (error: any) {
-            res.status(400).json({ error: error.message });
+            return;
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async getById(
+        req: Request & { usuario?: UsuarioDecoded },
+        res: Response,
+        next: NextFunction
+    ) {
+        try {
+            const { id } = req.params;
+
+            const usuario = req.usuario;
+            if (!usuario || usuario.role !== 'ADMIN') {
+                res.status(403).json({ message: 'Apenas administradores podem visualizar dados de usuários.' });
+                return;
+            }
+
+            const user = await userService.getById(id);
+
+            if (!user) {
+                res.status(404).json({ message: 'Usuário não encontrado.' });
+                return;
+            }
+
+            res.json(user);
+            return;
+        } catch (error) {
+            next(error);
         }
     },
 
 
-
-    async getMovimentacoes(req: Request, res: Response) {
-        const { id } = req.params;
+    async getMovimentacoes(
+        req: Request & { usuario?: UsuarioDecoded },
+        res: Response,
+        next: NextFunction
+    ) {
         try {
+            const usuario = req.usuario;
+            const { id } = req.params;
+
+            if (!usuario || usuario.role !== 'ADMIN') {
+                res.status(403).json({ message: 'Apenas administradores podem visualizar movimentações.' });
+                return;
+            }
+
             const movimentacoes = await userService.getStockMovements(id);
             res.json(movimentacoes);
-            return
-        } catch (error: any) {
-            res.status(400).json({ error: error.message });
-            return
+            return;
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async delete(
+        req: Request & { usuario?: UsuarioDecoded },
+        res: Response,
+        next: NextFunction
+    ) {
+        try {
+            const usuario = req.usuario;
+            const { id } = req.params;
+
+            if (!usuario || usuario.role !== 'ADMIN') {
+                res.status(403).json({ message: 'Apenas administradores podem deletar usuários.' });
+                return;
+            }
+
+            const userToDelete = await userService.getById(id);
+
+            if (!userToDelete) {
+                res.status(404).json({ message: 'Usuário não encontrado.' });
+                return;
+            }
+
+            if (userToDelete.role === 'ADMIN') {
+                res.status(403).json({ message: 'Você não pode deletar um administrador.' });
+                return;
+            }
+
+            await userService.delete(id);
+            res.status(204).send();
+            return;
+        } catch (error) {
+            next(error);
         }
     }
+
 };
