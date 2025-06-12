@@ -158,6 +158,25 @@ export const userController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    checkEmailExists: async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      res.status(400).json({ error: 'E-mail inválido' });
+      return;
     }
+
+    try {
+      const exists = await userService.emailExists(email);
+      res.status(200).json({ exists });
+      return;
+    } catch (error) {
+      console.error('Erro ao verificar e-mail:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+      return;
+    }
+  }
 
 };

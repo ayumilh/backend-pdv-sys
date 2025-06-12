@@ -68,6 +68,11 @@ export const userService = {
 
   async delete(id: string) {
     return await prisma.user.delete({ where: { id } });
+  },
+
+    emailExists: async (email: string): Promise<boolean> => {
+    const user = await prisma.user.findUnique({ where: { email } });
+    return !!user;
   }
 
 };

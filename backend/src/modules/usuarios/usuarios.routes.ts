@@ -18,4 +18,7 @@ router.delete('/:id', userController.delete);
 router.get('/:id', userController.getById);
 
 
+router.post('/verificar-email', userController.checkEmailExists);
+
+
 export default router;
