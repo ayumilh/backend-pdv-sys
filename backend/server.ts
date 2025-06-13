@@ -12,6 +12,7 @@ import userRoutes from "./src/modules/user/user.routes";
 import productsRoutes from "./src/modules/product/product.routes";
 import categorysRoutes from "./src/modules/category/category.routes";
 import stockRoutes from "./src/modules/stock/stock.routes";
+import cashRoutes from "./src/modules/cash/cash.routes";
 
 import { errorMiddleware } from "./src/shared/middleware/errorMiddleware";
 
@@ -42,7 +43,7 @@ app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", categorysRoutes);
 app.use("/api/stock", stockRoutes);
-
+app.use("/api/cash", cashRoutes);
 
 app.use(errorMiddleware);
 

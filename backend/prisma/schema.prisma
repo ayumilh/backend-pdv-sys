@@ -122,6 +122,8 @@ model Sale {
   items         SaleItem[]
   createdAt     DateTime      @default(now())
   fiscalDocument FiscalDocument?
+
+  SalePayment SalePayment[]
 }
 
 enum SaleStatus {
@@ -148,6 +150,15 @@ enum PaymentMethod {
   PIX
   CARTAO
 }
+
+model SalePayment {
+  id         String   @id @default(uuid())
+  saleId     String
+  sale       Sale     @relation(fields: [saleId], references: [id])
+  method     PaymentMethod
+  amount     Float
+}
+
 
 model CashRegister {
   id            String   @id @default(uuid())
