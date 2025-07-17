@@ -8,16 +8,77 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(uuid())
-  name        String
-  email       String     @unique
-  password    String
-  role        UserRole
-  sales       Sale[]
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  
+  appUser       AppUser?
+
+  @@map("user")
+}
+
+model AppUser {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales          Sale[]
   stockMovements StockMovement[]
-  cashRegisters CashRegister[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  cashRegisters  CashRegister[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String   @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
 }
 
 enum UserRole {
@@ -77,8 +138,8 @@ model StockMovement {
   product     Product          @relation(fields: [productId], references: [id])
   type        StockMovementType
   quantity    Int
-  userId      String?
-  user        User?            @relation(fields: [userId], references: [id])
+  appUserId   String?
+  appUser     AppUser?         @relation(fields: [appUserId], references: [id])
   createdAt   DateTime         @default(now())
 }
 
@@ -101,20 +162,20 @@ model Client {
 }
 
 model LoyaltyPoint {
-  id        String     @id @default(uuid())
+  id        String   @id @default(uuid())
   clientId  String
-  client    Client     @relation(fields: [clientId], references: [id])
+  client    Client   @relation(fields: [clientId], references: [id])
   points    Int
   reason    String
-  createdAt DateTime   @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Sale {
   id            String        @id @default(uuid())
   clientId      String?
   client        Client?       @relation(fields: [clientId], references: [id])
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
+  appUserId     String
+  appUser       AppUser       @relation(fields: [appUserId], references: [id])
   total         Float
   paymentMethod PaymentMethod
   status        SaleStatus    @default(FINALIZADA)
@@ -133,16 +194,16 @@ enum SaleStatus {
 }
 
 model SaleItem {
-  id        String   @id @default(uuid())
-  saleId    String
-  productId String
-  quantity  Int
-  price     Float
-  product   Product  @relation(fields: [productId], references: [id])
-  sale      Sale     @relation(fields: [saleId], references: [id])
-  weight    Float?
+  id         String   @id @default(uuid())
+  saleId     String
+  productId  String
+  quantity   Int
+  price      Float
+  product    Product  @relation(fields: [productId], references: [id])
+  sale       Sale     @relation(fields: [saleId], references: [id])
+  weight     Float?
   weighingId String?
-  weighing  Weighing? @relation(fields: [weighingId], references: [id])
+  weighing   Weighing? @relation(fields: [weighingId], references: [id])
 }
 
 enum PaymentMethod {
@@ -159,11 +220,10 @@ model SalePayment {
   amount     Float
 }
 
-
 model CashRegister {
   id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
+  appUserId     String
+  appUser       AppUser  @relation(fields: [appUserId], references: [id])
   openedAt      DateTime
   closedAt      DateTime?
   openingAmount Float

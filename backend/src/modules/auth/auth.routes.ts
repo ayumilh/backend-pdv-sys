@@ -1,11 +1,9 @@
-import express from "express";
-import { login, register } from "./auth.controller"; // Corrija o caminho conforme necessário"
+import { Router } from "express";
+import { login, register } from "./auth.controller";
 
-const router = express.Router();
-
-// Rota de login
-router.post("/login", login);
+const router = Router();
 
 router.post("/register", register);
+router.post("/login", login);
 
 export default router;
