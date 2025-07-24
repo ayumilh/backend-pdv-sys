@@ -1,35 +1,63 @@
-import { Response, NextFunction, Request } from "express";
-import jwt from "jsonwebtoken";
-import { UserRole } from "@prisma/client";
+import { Request, Response, NextFunction } from "express";
+import { prisma } from '../../../prisma/prismaClient';
 
-const secretKey = process.env.JWT_SECRET as string;
-
-interface TokenPayload {
-  id: string;
-  name: string;
-  email?: string;
-  role: UserRole;
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role: string;
+    userId?: string;
+  };
 }
 
-// Solução correta aqui
-export const authMiddleware = (
-  req: Request & { usuario?: TokenPayload }, // 👈 AQUI
+export async function authenticate(
+  req: AuthRequest,
   res: Response,
   next: NextFunction
-): void => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.split(" ")[1];
-
-  if (!token) {
-    res.status(401).json({ message: "Token não fornecido." });
-    return;
-  }
-
+) {
   try {
-    const decoded = jwt.verify(token, secretKey) as TokenPayload;
-    req.usuario = decoded;
+    // Extrai o token do cookie better-auth.session_token
+    const cookieHeader = req.headers.cookie || "";
+    const tokenRaw = cookieHeader
+      .split(";")
+      .map(c => c.trim())
+      .find(c => c.startsWith("better-auth.session_token="));
+    const token = tokenRaw?.split("=")[1]?.split(".")[0];
+
+    if (!token) {
+      return res.status(401).json({ error: "Token de sessão ausente." });
+    }
+
+    // Busca a sessão no banco pelo token
+    const session = await prisma.session.findUnique({
+      where: { token },
+    });
+
+    if (!session || !session.userId) {
+      return res.status(401).json({ error: "Sessão inválida ou expirada." });
+    }
+
+    // Busca o usuário associado à sessão
+    const user = await prisma.appUser.findUnique({
+      where: { userId: session.userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    // Anexa dados mínimos ao req.user
+    req.user = {
+      id: user.id,
+      role: user.role,
+      userId: user.userId, // Adiciona o userId para compatibilidade
+    };
+    console.log("Usuário autenticado:", req.user);
+
     next();
-  } catch {
-    res.status(401).json({ message: "Token inválido." });
+  } catch (error) {
+    console.error("Erro na autenticação:", error);
+    return res.status(500).json({ error: "Erro interno de autenticação." });
   }
-};
+}
+
+export const authMiddleware = authenticate;
