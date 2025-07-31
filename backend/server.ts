@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 dotenv.config();
-import 'module-alias/register';
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
