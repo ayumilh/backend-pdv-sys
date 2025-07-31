@@ -1,108 +1,152 @@
-import { PrismaClient, Product, Prisma, StockMovementType } from "@prisma/client";
+import pool from '../../../bd.js';
 
-const prisma = new PrismaClient();
+// Lista produtos com filtro opcional
+export const listProducts = async (categoryId?: string, search?: string) => {
+  const filters = [];
+  const values: any[] = [];
 
-// Lista todos os produtos com filtros opcionais
-export const listProducts = async (categoryId?: string, search?: string): Promise<Product[]> => {
-  return prisma.product.findMany({
-    where: {
-      AND: [
-        categoryId ? { categoryId } : {},
-        search
-          ? {
-            OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { barcode: { contains: search, mode: "insensitive" } },
-            ],
-          }
-          : {},
-      ],
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      category: true,
-    },
-  });
+  if (categoryId) {
+    filters.push(`"categoryId" = $${values.length + 1}`);
+    values.push(categoryId);
+  }
+
+  if (search) {
+    filters.push(`(LOWER(name) LIKE $${values.length + 1} OR LOWER(barcode) LIKE $${values.length + 1})`);
+    values.push(`%${search.toLowerCase()}%`);
+  }
+
+  const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+  const result = await pool.query(`
+    SELECT p.*, c.name AS category_name
+    FROM "Product" p
+    LEFT JOIN "Category" c ON p."categoryId" = c.id
+    ${whereClause}
+    ORDER BY p."createdAt" DESC
+  `, values);
+
+  return result.rows;
 };
 
 // Busca produto por ID
-export const getProductById = async (id: string): Promise<Product | null> => {
-  return prisma.product.findUnique({
-    where: { id },
-    include: { category: true },
-  });
+export const getProductById = async (id: string) => {
+  const result = await pool.query(`
+    SELECT p.*, c.name AS category_name
+    FROM "Product" p
+    LEFT JOIN "Category" c ON p."categoryId" = c.id
+    WHERE p.id = $1
+  `, [id]);
+
+  return result.rows[0] || null;
 };
 
-// Adiciona userId no tipo de input
-type CreateProductInput = Omit<Prisma.ProductCreateInput, "id" | "createdAt" | "updatedAt"> & {
+// Cria um novo produto e registra entrada no estoque
+export const createProduct = async (data: {
+  name: string;
+  price: number;
+  stock: number;
+  barcode?: string | null;
+  imageUrl?: string | null;
+  weight?: number | null;
+  categoryId?: string | null;
   userId: string;
-};
-
-export const createProduct = async (data: CreateProductInput): Promise<Product> => {
+}) => {
   if (data.price < 0) throw new Error("Preço deve ser maior ou igual a zero.");
   if (data.stock < 0) throw new Error("Estoque não pode ser negativo.");
 
-  const product = await prisma.product.create({
-    data: {
-      name: data.name,
-      price: data.price,
-      stock: data.stock,
-      barcode: data.barcode || null,
-      imageUrl: data.imageUrl || null,
-      weight: data.weight || null,
-    },
-  });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  if (data.stock > 0) {
-    await prisma.stockMovement.create({
-      data: {
-        productId: product.id,
-        quantity: data.stock,
-        type: StockMovementType.ENTRADA,
-        userId: data.userId,
-      },
-    });
+    const productResult = await client.query(`
+      INSERT INTO "Product" (name, price, stock, barcode, "imageUrl", weight, "categoryId", "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      RETURNING *
+    `, [
+      data.name,
+      data.price,
+      data.stock,
+      data.barcode || null,
+      data.imageUrl || null,
+      data.weight || null,
+      data.categoryId || null,
+    ]);
+
+    const product = productResult.rows[0];
+
+    if (data.stock > 0) {
+      await client.query(`
+        INSERT INTO "StockMovement" ("productId", quantity, type, "appUserId", "createdAt")
+        VALUES ($1, $2, 'ENTRADA', $3, NOW())
+      `, [product.id, data.stock, data.userId]);
+    }
+
+    await client.query('COMMIT');
+    return product;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
-
-  return product;
 };
 
-
-
-// Atualiza um produto
+// Atualiza produto
 export const updateProduct = async (
   id: string,
-  data: Partial<Omit<Product, "id" | "createdAt" | "updatedAt">>
-): Promise<Product> => {
-  if (data.price !== undefined && data.price < 0) {
-    throw new Error("Preço inválido");
+  data: {
+    name?: string;
+    price?: number;
+    stock?: number;
+    barcode?: string;
+    imageUrl?: string;
+    weight?: number;
+    categoryId?: string;
   }
+) => {
+  const fields: string[] = [];
+  const values: any[] = [];
 
-  if (data.stock !== undefined && data.stock < 0) {
-    throw new Error("Estoque inválido");
-  }
-
-  return prisma.product.update({
-    where: { id },
-    data,
-  });
-};
-
-
-export const deleteProduct = async (id: string): Promise<boolean> => {
-  const existing = await prisma.product.findUnique({ where: { id } });
-  if (!existing) return false;
-
-  // Exclui todas as movimentações de estoque relacionadas
-  await prisma.stockMovement.deleteMany({
-    where: { productId: id },
+  Object.entries(data).forEach(([key, value], index) => {
+    fields.push(`"${key}" = $${index + 1}`);
+    values.push(value);
   });
 
-  // Agora pode deletar o produto com segurança
-  await prisma.product.delete({ where: { id } });
+  if (fields.length === 0) throw new Error("Nada para atualizar");
 
-  return true;
+  values.push(id);
+
+  const result = await pool.query(`
+    UPDATE "Product"
+    SET ${fields.join(', ')}, "updatedAt" = NOW()
+    WHERE id = $${values.length}
+    RETURNING *
+  `, values);
+
+  return result.rows[0];
 };
 
+// Deleta produto e movimentos
+export const deleteProduct = async (id: string) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const existing = await client.query(`SELECT * FROM "Product" WHERE id = $1`, [id]);
+    if (!existing.rows.length) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+
+    await client.query(`DELETE FROM "StockMovement" WHERE "productId" = $1`, [id]);
+    await client.query(`DELETE FROM "Product" WHERE id = $1`, [id]);
+
+    await client.query('COMMIT');
+    return true;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};

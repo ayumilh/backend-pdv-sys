@@ -55,7 +55,7 @@ export const createCategory = async (
     res.status(201).json(newCategory);
 
   } catch (error: any) {
-    // Tratamento para erro de unique constraint do Prisma
+    // Tratamento para erro de unique constraint
     if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
       res.status(400).json({ message: "Categoria com esse nome já existe." });
       return;

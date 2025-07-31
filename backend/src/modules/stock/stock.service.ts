@@ -1,89 +1,107 @@
-import { prisma } from '../../../prisma/prismaClient';
-import { StockMovementType } from '@prisma/client';
+import pool from '../../../bd.js';
 
 interface CreateMovementDTO {
   productId: string;
   quantity: number;
-  type: StockMovementType;
+  type: 'ENTRADA' | 'SAIDA' | 'AJUSTE' | 'VENDA';
   userId: string;
 }
 
 export const getAllMovements = async () => {
-  return prisma.stockMovement.findMany({
-    include: {
-      product: true,
-      user: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+  const result = await pool.query(`
+    SELECT m.*, p.name AS product_name, u.name AS user_name
+    FROM "StockMovement" m
+    LEFT JOIN "Product" p ON m."productId" = p.id
+    LEFT JOIN "AppUser" u ON m."appUserId" = u.id
+    ORDER BY m."createdAt" DESC
+  `);
+  return result.rows;
 };
 
 export const getMovementById = async (id: string) => {
-  return prisma.stockMovement.findUnique({
-    where: { id },
-    include: {
-      product: true,
-      user: true,
-    },
-  });
+  const result = await pool.query(`
+    SELECT m.*, p.name AS product_name, u.name AS user_name
+    FROM "StockMovement" m
+    LEFT JOIN "Product" p ON m."productId" = p.id
+    LEFT JOIN "AppUser" u ON m."appUserId" = u.id
+    WHERE m.id = $1
+  `, [id]);
+  return result.rows[0] || null;
 };
 
 export const createMovement = async ({ productId, quantity, type, userId }: CreateMovementDTO) => {
-  const movement = await prisma.stockMovement.create({
-    data: {
-      productId,
-      quantity,
-      type,
-      userId,
-    },
-  });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  // Atualiza o estoque do produto
-  const stockChange = type === 'ENTRADA' ? quantity : -quantity;
+    const movement = await client.query(`
+      INSERT INTO "StockMovement" ("productId", quantity, type, "appUserId", "createdAt")
+      VALUES ($1, $2, $3, $4, NOW())
+      RETURNING *
+    `, [productId, quantity, type, userId]);
 
-  await prisma.product.update({
-    where: { id: productId },
-    data: {
-      stock: {
-        increment: stockChange,
-      },
-    },
-  });
+    const stockChange = type === 'ENTRADA' ? quantity : -quantity;
 
-  return movement;
+    await client.query(`
+      UPDATE "Product"
+      SET stock = stock + $1
+      WHERE id = $2
+    `, [stockChange, productId]);
+
+    await client.query('COMMIT');
+    return movement.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 export const getMovementsByProduct = async (productId: string) => {
-  return prisma.stockMovement.findMany({
-    where: { productId },
-    include: {
-      user: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+  const result = await pool.query(`
+    SELECT m.*, u.name AS user_name
+    FROM "StockMovement" m
+    LEFT JOIN "AppUser" u ON m."appUserId" = u.id
+    WHERE m."productId" = $1
+    ORDER BY m."createdAt" DESC
+  `, [productId]);
+  return result.rows;
 };
 
 export const deleteMovement = async (id: string) => {
-  const existing = await prisma.stockMovement.findUnique({ where: { id } });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  if (!existing) return null;
+    const existing = await client.query(`
+      SELECT * FROM "StockMovement" WHERE id = $1
+    `, [id]);
 
-  // desfaz o efeito no estoque
-  const quantityChange =
-    existing.type === 'ENTRADA' ? -existing.quantity : existing.quantity;
+    if (existing.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return null;
+    }
 
-  await prisma.product.update({
-    where: { id: existing.productId },
-    data: {
-      stock: {
-        increment: quantityChange,
-      },
-    },
-  });
+    const movement = existing.rows[0];
+    const quantityChange = movement.type === 'ENTRADA' ? -movement.quantity : movement.quantity;
 
-  return prisma.stockMovement.delete({ where: { id } });
+    await client.query(`
+      UPDATE "Product"
+      SET stock = stock + $1
+      WHERE id = $2
+    `, [quantityChange, movement.productId]);
+
+    await client.query(`
+      DELETE FROM "StockMovement" WHERE id = $1
+    `, [id]);
+
+    await client.query('COMMIT');
+    return movement;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };

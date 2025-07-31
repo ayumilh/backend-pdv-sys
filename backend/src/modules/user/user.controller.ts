@@ -1,13 +1,13 @@
 // src/modules/userauth/userController.ts
-import { Request, Response, NextFunction } from "express"
-import { prisma } from "../../../prisma/prismaClient"
+import { Request, Response, NextFunction } from "express";
+import pool from "../../../bd.js";
 
 interface AuthRequest extends Request {
   user?: {
-    id: string
-    role: string
-    userId?: string
-  }
+    id: string;
+    role: string;
+    userId?: string;
+  };
 }
 
 export async function getAuthenticatedUser(
@@ -17,31 +17,31 @@ export async function getAuthenticatedUser(
 ): Promise<void> {
   try {
     if (!req.user) {
-      res.status(401).json({ error: "Usuário não autenticado." })
-      return
+      res.status(401).json({ error: "Usuário não autenticado." });
+      return;
     }
 
-    const { id, role, userId } = req.user
+    const { id, role, userId } = req.user;
 
-    const perfil = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true, email: true },
-    })
+    const result = await pool.query(
+      `SELECT name, email FROM "user" WHERE id = $1 LIMIT 1`,
+      [userId]
+    );
+
+    const perfil = result.rows[0];
 
     if (!perfil) {
-      res.status(404).json({ error: "Perfil do usuário não encontrado." })
-      return
+      res.status(404).json({ error: "Perfil do usuário não encontrado." });
+      return;
     }
 
-    // Apenas chama o json, não retorna o resultado dele
     res.status(200).json({
       id,
       role,
       name: perfil.name,
       email: perfil.email,
-    })
-    return
+    });
   } catch (err) {
-    next(err)
+    next(err);
   }
 }

@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import * as cashService from './cash.service';
-import { CashTransactionType, PaymentMethod } from '@prisma/client';
 
 interface UsuarioDecoded {
   id: string;

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { prisma } from '../../../prisma/prismaClient';
+import pool from "../../../bd";
 
 interface AuthRequest extends Request {
   user?: {
@@ -27,19 +27,23 @@ export async function authenticate(
       return res.status(401).json({ error: "Token de sessão ausente." });
     }
 
-    // Busca a sessão no banco pelo token
-    const session = await prisma.session.findUnique({
-      where: { token },
-    });
+    // Busca a sessão no banco
+    const sessionResult = await pool.query(
+      `SELECT * FROM session WHERE token = $1 LIMIT 1`,
+      [token]
+    );
+    const session = sessionResult.rows[0];
 
     if (!session || !session.userId) {
       return res.status(401).json({ error: "Sessão inválida ou expirada." });
     }
 
-    // Busca o usuário associado à sessão
-    const user = await prisma.appUser.findUnique({
-      where: { userId: session.userId },
-    });
+    // Busca o AppUser correspondente
+    const appUserResult = await pool.query(
+      `SELECT * FROM "AppUser" WHERE "userId" = $1 LIMIT 1`,
+      [session.userId]
+    );
+    const user = appUserResult.rows[0];
 
     if (!user) {
       return res.status(404).json({ error: "Usuário não encontrado." });
@@ -51,8 +55,6 @@ export async function authenticate(
       role: user.role,
       userId: user.userId, // Adiciona o userId para compatibilidade
     };
-    console.log("Usuário autenticado:", req.user);
-
     next();
   } catch (error) {
     console.error("Erro na autenticação:", error);

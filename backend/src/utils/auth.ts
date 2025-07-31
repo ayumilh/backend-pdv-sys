@@ -1,13 +1,14 @@
+import "dotenv/config";
 import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import pkg from 'pg';
+const { Pool } = pkg;
 
 export const auth = betterAuth({
   emailAndPassword: { enabled: true },
-  database: prismaAdapter(prisma, { provider: "postgresql" }),
-  trustedOrigins: ["http://localhost:3000"],
+  database: new Pool({
+    connectionString: process.env.DATABASE_URL,
+  }),
+  trustedOrigins: ['http://localhost:3000'],
 });
 
 

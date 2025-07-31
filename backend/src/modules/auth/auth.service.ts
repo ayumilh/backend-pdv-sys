@@ -1,6 +1,5 @@
-import { prisma } from "../../../prisma/prismaClient";
-import { auth } from "../../utils/auth";
-import { UserRole } from "@prisma/client";
+import pool from "../../../bd"
+import { auth } from "../../utils/auth.js";
 
 interface RegisterDTO {
   name: string;
@@ -12,9 +11,12 @@ interface RegisterDTO {
 export const register = async (data: RegisterDTO) => {
   const { name, email, password, role } = data;
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const existingUser = await pool.query(
+    'SELECT * FROM "user" WHERE email = $1',
+    [email]
+  );
 
-  if (existingUser) {
+  if (existingUser.rowCount > 0) {
     throw { statusCode: 409, message: "Email já está em uso." };
   }
 
@@ -27,27 +29,24 @@ export const register = async (data: RegisterDTO) => {
     throw { statusCode: 500, message: "Erro ao registrar usuário no Auth." };
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: result.user.id },
-  });
+const userId = result.user.id;
+const userQuery = await pool.query('SELECT * FROM "user" WHERE id = $1', [userId]);
+if (userQuery.rowCount === 0) {
+  throw { statusCode: 500, message: "Usuário não encontrado após criação." };
+}
 
-  if (!user) {
-    throw { statusCode: 500, message: "Usuário não encontrado após criação." };
-  }
+// Insere na AppUser
+const insertAppUser = await pool.query(
+  `INSERT INTO "AppUser" ("userId", role) VALUES ($1, $2) RETURNING id`,
+  [userId, role]
+);
 
-  const appUser = await prisma.appUser.create({
-    data: {
-      userId: user.id,
-      role: role,
-    },
-  });
-
-  return {
-    id: appUser.id,
-    name: user.name,
-    email: user.email,
-    role: appUser.role,
-  };
+return {
+  id: insertAppUser.rows[0].id,
+  name: userQuery.rows[0].name,
+  email: userQuery.rows[0].email,
+  role: role,
+};
 };
 
 
@@ -82,11 +81,11 @@ export const login = async (data: AuthLoginData): Promise<AuthLoginResponse> => 
   const rawSetCookie = result.headers.get("set-cookie");
   const cookies = rawSetCookie
     ? (Array.isArray(rawSetCookie) ? rawSetCookie : [rawSetCookie]).map(cookie =>
-        cookie
-          .replace(/;\s*SameSite=Lax/i, "; SameSite=None")
-          .replace(/;\s*SameSite=Strict/i, "; SameSite=None")
-          .replace(/;\s*Secure/i, "") + "; Secure"
-      )
+      cookie
+        .replace(/;\s*SameSite=Lax/i, "; SameSite=None")
+        .replace(/;\s*SameSite=Strict/i, "; SameSite=None")
+        .replace(/;\s*Secure/i, "") + "; Secure"
+    )
     : [];
 
   const bodyBuffer = await result.arrayBuffer();
@@ -96,10 +95,12 @@ export const login = async (data: AuthLoginData): Promise<AuthLoginResponse> => 
     throw { statusCode: 401, message: "Credenciais inválidas." };
   }
 
-  const appUser = await prisma.appUser.findUnique({
-    where: { userId: responseData.user.id },
-    select: { role: true },
-  });
+  const roleResult = await pool.query(
+    `SELECT role FROM "AppUser" WHERE "userId" = $1 LIMIT 1`,
+    [responseData.user.id]
+  );
+
+  const role = roleResult.rows.length > 0 ? roleResult.rows[0].role : null;
 
   return {
     token: responseData.token,
@@ -107,7 +108,7 @@ export const login = async (data: AuthLoginData): Promise<AuthLoginResponse> => 
       id: responseData.user.id,
       name: responseData.user.name || "",
       email: responseData.user.email || "",
-      role: appUser?.role || null,
+      role: role,
     },
     headers,
     cookies,
