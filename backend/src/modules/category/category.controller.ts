@@ -20,7 +20,10 @@ export const list = async (req: Request, res: Response, next: NextFunction) => {
 export const get = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const category = await categoryService.getCategoryById(req.params.id);
-    if (!category) return res.status(404).json({ message: 'Categoria não encontrada' });
+    if (!category) {
+      res.status(404).json({ message: 'Categoria não encontrada' });
+      return;
+    }
     res.json(category);
   } catch (error) {
     next(error);

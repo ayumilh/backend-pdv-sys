@@ -24,7 +24,8 @@ export async function authenticate(
     const token = tokenRaw?.split("=")[1]?.split(".")[0];
 
     if (!token) {
-      return res.status(401).json({ error: "Token de sessão ausente." });
+      res.status(401).json({ error: "Token de sessão ausente." });
+      return;
     }
 
     // Busca a sessão no banco
@@ -35,7 +36,8 @@ export async function authenticate(
     const session = sessionResult.rows[0];
 
     if (!session || !session.userId) {
-      return res.status(401).json({ error: "Sessão inválida ou expirada." });
+      res.status(401).json({ error: "Sessão inválida ou expirada." });
+      return
     }
 
     // Busca o AppUser correspondente
@@ -46,7 +48,8 @@ export async function authenticate(
     const user = appUserResult.rows[0];
 
     if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado." });
+      res.status(404).json({ error: "Usuário não encontrado." });
+      return;
     }
 
     // Anexa dados mínimos ao req.user
@@ -58,7 +61,8 @@ export async function authenticate(
     next();
   } catch (error) {
     console.error("Erro na autenticação:", error);
-    return res.status(500).json({ error: "Erro interno de autenticação." });
+    res.status(500).json({ error: "Erro interno de autenticação." });
+    return;
   }
 }
 
