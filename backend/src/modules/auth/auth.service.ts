@@ -5,7 +5,7 @@ interface RegisterDTO {
   name: string;
   email: string;
   password: string;
-  role: UserRole;
+  role: String;
 }
 
 export const register = async (data: RegisterDTO) => {
@@ -16,9 +16,10 @@ export const register = async (data: RegisterDTO) => {
     [email]
   );
 
-  if (existingUser.rowCount > 0) {
+  if ((existingUser.rowCount ?? 0) > 0) {
     throw { statusCode: 409, message: "Email já está em uso." };
   }
+
 
   const result = await auth.api.signUpEmail({
     body: { email, password, name },
@@ -29,24 +30,24 @@ export const register = async (data: RegisterDTO) => {
     throw { statusCode: 500, message: "Erro ao registrar usuário no Auth." };
   }
 
-const userId = result.user.id;
-const userQuery = await pool.query('SELECT * FROM "user" WHERE id = $1', [userId]);
-if (userQuery.rowCount === 0) {
-  throw { statusCode: 500, message: "Usuário não encontrado após criação." };
-}
+  const userId = result.user.id;
+  const userQuery = await pool.query('SELECT * FROM "user" WHERE id = $1', [userId]);
+  if (userQuery.rowCount === 0) {
+    throw { statusCode: 500, message: "Usuário não encontrado após criação." };
+  }
 
-// Insere na AppUser
-const insertAppUser = await pool.query(
-  `INSERT INTO "AppUser" ("userId", role) VALUES ($1, $2) RETURNING id`,
-  [userId, role]
-);
+  // Insere na AppUser
+  const insertAppUser = await pool.query(
+    `INSERT INTO "AppUser" ("userId", role) VALUES ($1, $2) RETURNING id`,
+    [userId, role]
+  );
 
-return {
-  id: insertAppUser.rows[0].id,
-  name: userQuery.rows[0].name,
-  email: userQuery.rows[0].email,
-  role: role,
-};
+  return {
+    id: insertAppUser.rows[0].id,
+    name: userQuery.rows[0].name,
+    email: userQuery.rows[0].email,
+    role: role,
+  };
 };
 
 
