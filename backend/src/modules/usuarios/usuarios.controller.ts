@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { userService } from './usuarios.service';
+import { userService } from './usuarios.service.js';
 
 interface UsuarioDecoded {
     id: string;

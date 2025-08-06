@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import * as cashController from './cash.controller';
-import { authMiddleware } from '../../shared/middleware/authMiddleware';
+import * as cashController from './cash.controller.js';
+import { authMiddleware } from '../../shared/middleware/authMiddleware.js';
 
 const router = Router();
 

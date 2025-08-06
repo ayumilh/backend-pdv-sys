@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as cashService from './cash.service';
+import * as cashService from './cash.service.js';
 
 interface UsuarioDecoded {
   id: string;

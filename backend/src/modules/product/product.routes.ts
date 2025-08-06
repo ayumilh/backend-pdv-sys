@@ -7,7 +7,7 @@ import {
   deleteProduct,
   createMovementForProduct,
   getMovementsByProduct
-} from "./product.controller";
+} from "./product.controller.js";
 import { authMiddleware } from '../../shared/middleware/authMiddleware';
 
 const router = Router();

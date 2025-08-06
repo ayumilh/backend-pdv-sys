@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import pool from "../../../bd";
+import pool from "../../../bd.js";
 
 interface AuthRequest extends Request {
   user?: {

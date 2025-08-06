@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as stockService from './stock.service';
+import * as stockService from './stock.service.js';
 
 interface UsuarioDecoded {
   id: string;

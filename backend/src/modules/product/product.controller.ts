@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import * as productService from "./product.service";
-import * as stockService from "../stock/stock.service";
+import * as productService from "./product.service.js";
+import * as stockService from "../stock/stock.service.js";
 
 interface UsuarioDecoded {
   id: string;
