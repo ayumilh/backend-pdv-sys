@@ -1,14 +1,14 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "server.ts",
+  "main": "index.ts",
   "author": "ayumilh",
   "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx watch server.ts",
-    "start": "node --loader tsx server.ts",
+    "start": "node dist/server.js",
     "build": "tsc"
   },
   "_moduleAliases": {
