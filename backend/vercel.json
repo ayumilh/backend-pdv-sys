@@ -16,5 +16,5 @@
       "dest": "api/index.ts"
     }
   ],
-  "buildCommand": "npm run prisma:generate && npm run build"
+  "buildCommand": "npm run build"
 }
