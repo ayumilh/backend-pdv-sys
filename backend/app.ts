@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -32,9 +32,10 @@ app.use(
 app.options("*", cors());
 
 // Rota 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Bem-vindo à página principal");
+app.get('/api', (_, res) => {
+  res.send('API is running!');
 });
+
 
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/products", productsRoutes);
