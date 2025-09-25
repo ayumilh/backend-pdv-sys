@@ -25,7 +25,8 @@ app.use(
   cors({
     origin: [
       "https://interface-pdv-sys.vercel.app",
-      "http://localhost:3000"
+      "http://localhost:3000",
+      "https://pdv.realeza.company"
     ],
     credentials: true,
   })
@@ -46,7 +47,7 @@ app.use('/api/userauth', authRoutes, userRoutes);
 
 app.use(errorMiddleware);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
 
 app.listen(PORT, () => {

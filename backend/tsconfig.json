@@ -10,5 +10,5 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src", "bd.ts"]
+  "include": ["src", "bd.ts",  "server.ts", "app.ts"]
 }
