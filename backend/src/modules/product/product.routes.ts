@@ -8,7 +8,7 @@ import {
   createMovementForProduct,
   getMovementsByProduct
 } from "./product.controller.js";
-import { authMiddleware } from '../../shared/middleware/authMiddleware';
+import { authMiddleware } from "../../shared/middleware/authMiddleware.js";
 
 const router = Router();
 

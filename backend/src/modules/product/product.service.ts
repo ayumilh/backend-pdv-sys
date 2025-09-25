@@ -1,4 +1,4 @@
-import pool from '../../../bd.js';
+import pool from "../../../bd.js";
 
 // Lista produtos com filtro opcional
 export const listProducts = async (categoryId?: string, search?: string) => {

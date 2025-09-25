@@ -1,4 +1,4 @@
-import pool from '../../../bd.js';
+import pool from "../../../bd.js";
 
 interface CreateMovementDTO {
   productId: string;

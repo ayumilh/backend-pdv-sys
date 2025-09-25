@@ -1,4 +1,4 @@
-import pool from "../../../bd"
+import pool from "../../../bd.js";
 import { auth } from "../../utils/auth.js";
 
 interface RegisterDTO {
