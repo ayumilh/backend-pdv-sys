@@ -38,12 +38,12 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Bem-vindo à página principal");
 });
 
-app.use("/api/usuarios", usuariosRoutes);
-app.use("/api/products", productsRoutes);
-app.use("/api/categories", categorysRoutes);
-app.use("/api/stock", stockRoutes);
-app.use("/api/cash", cashRoutes);
-app.use('/api/userauth', authRoutes, userRoutes);
+app.use("/usuarios", usuariosRoutes);
+app.use("/products", productsRoutes);
+app.use("/categories", categorysRoutes);
+app.use("/stock", stockRoutes);
+app.use("/cash", cashRoutes);
+app.use('/userauth', authRoutes, userRoutes);
 
 app.use(errorMiddleware);
 
