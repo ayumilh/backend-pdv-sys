@@ -23,7 +23,7 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: [
-      "https://interface-pdv-sys.vercel.app", 
+      "https://pdv.realeza.company", 
       "http://localhost:3000"
     ],
     credentials: true,
@@ -32,17 +32,17 @@ app.use(
 app.options("*", cors());
 
 // Rota 
-app.get('/api', (_, res) => {
+app.get('/', (_, res) => {
   res.send('API is running!');
 });
 
 
-app.use("/api/usuarios", usuariosRoutes);
-app.use("/api/products", productsRoutes);
-app.use("/api/categories", categorysRoutes);
-app.use("/api/stock", stockRoutes);
-app.use("/api/cash", cashRoutes);
-app.use('/api/userauth', authRoutes, userRoutes);
+app.use("/usuarios", usuariosRoutes);
+app.use("/products", productsRoutes);
+app.use("/categories", categorysRoutes);
+app.use("/stock", stockRoutes);
+app.use("/cash", cashRoutes);
+app.use('/userauth', authRoutes, userRoutes);
 
 app.use(errorMiddleware);
 
