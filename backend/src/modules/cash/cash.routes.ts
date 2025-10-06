@@ -11,5 +11,7 @@ router.post('/close', cashController.fecharCaixa);
 router.post('/venda', cashController.registrarVenda);
 router.post('/transacao', cashController.registrarTransacao);
 router.get('/resumo/:registerId', cashController.getResumoCaixa);
+router.post('/cancel/:saleId', cashController.cancelarVenda);
+router.delete('/cancel/:saleId/item/:itemId', cashController.cancelarItem);
 
 export default router;

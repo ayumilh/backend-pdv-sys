@@ -1,28 +1,27 @@
-
--- Enums
+-- =======================================================
+-- 🧩 ENUMS
+-- =======================================================
 CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'CAIXA', 'ESTOQUISTA');
 CREATE TYPE "StockMovementType" AS ENUM ('ENTRADA', 'SAIDA', 'AJUSTE', 'VENDA');
 CREATE TYPE "SaleStatus" AS ENUM ('EM_ANDAMENTO', 'FINALIZADA', 'CANCELADA');
 CREATE TYPE "PaymentMethod" AS ENUM ('DINHEIRO', 'PIX', 'CARTAO');
 CREATE TYPE "CashTransactionType" AS ENUM ('ABERTURA', 'FECHAMENTO', 'VENDA', 'SANGRIA', 'SUPRIMENTO');
 
--- AppUser
+-- =======================================================
+-- 🧩 AppUser
+-- =======================================================
 CREATE TABLE "AppUser" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "userId" TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,  -- nome de usuário interno
+  password TEXT NOT NULL,          -- senha (criptografada)
   role "UserRole" NOT NULL,
   "createdAt" TIMESTAMP DEFAULT NOW(),
   "updatedAt" TIMESTAMP DEFAULT NOW()
 );
 
--- 
-ALTER TABLE "AppUser"
-ADD CONSTRAINT fk_appuser_user
-FOREIGN KEY ("userId") REFERENCES "user"(id)
-ON DELETE CASCADE;
-
-
--- Category
+-- =======================================================
+-- 🧩 Category
+-- =======================================================
 CREATE TABLE "Category" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT UNIQUE NOT NULL,
@@ -30,22 +29,29 @@ CREATE TABLE "Category" (
   "updatedAt" TIMESTAMP DEFAULT NOW()
 );
 
--- Product
+-- =======================================================
+-- 🧩 Product
+-- =======================================================
 CREATE TABLE "Product" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   barcode TEXT UNIQUE,
-  price FLOAT NOT NULL,
+  price NUMERIC(10,2) NOT NULL,
   "imageUrl" TEXT,
-  stock INTEGER NOT NULL,
-  weight FLOAT,
-  "categoryId" UUID,
+  stock INTEGER NOT NULL DEFAULT 0,
+  weight NUMERIC(10,2),
+  "categoryId" UUID REFERENCES "Category"(id) ON DELETE SET NULL,
+  "costPrice" NUMERIC(10,2) DEFAULT 0,
+  "unit" VARCHAR(20) DEFAULT 'UN',
+  "minStock" INTEGER DEFAULT 0,
+  "sku" TEXT UNIQUE,
   "createdAt" TIMESTAMP DEFAULT NOW(),
-  "updatedAt" TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT fk_product_category FOREIGN KEY ("categoryId") REFERENCES "Category"(id)
+  "updatedAt" TIMESTAMP DEFAULT NOW()
 );
 
--- Scale
+-- =======================================================
+-- 🧩 Scale
+-- =======================================================
 CREATE TABLE "Scale" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -54,30 +60,32 @@ CREATE TABLE "Scale" (
   "updatedAt" TIMESTAMP DEFAULT NOW()
 );
 
--- Weighing
+-- =======================================================
+-- 🧩 Weighing
+-- =======================================================
 CREATE TABLE "Weighing" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "scaleId" UUID NOT NULL,
-  "productId" UUID NOT NULL,
-  weight FLOAT NOT NULL,
-  "createdAt" TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT fk_weighing_scale FOREIGN KEY ("scaleId") REFERENCES "Scale"(id),
-  CONSTRAINT fk_weighing_product FOREIGN KEY ("productId") REFERENCES "Product"(id)
+  "scaleId" UUID NOT NULL REFERENCES "Scale"(id) ON DELETE CASCADE,
+  "productId" UUID NOT NULL REFERENCES "Product"(id) ON DELETE CASCADE,
+  weight NUMERIC(10,2) NOT NULL,
+  "createdAt" TIMESTAMP DEFAULT NOW()
 );
 
--- StockMovement
+-- =======================================================
+-- 🧩 StockMovement
+-- =======================================================
 CREATE TABLE "StockMovement" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "productId" UUID NOT NULL,
+  "productId" UUID NOT NULL REFERENCES "Product"(id) ON DELETE CASCADE,
   type "StockMovementType" NOT NULL,
   quantity INTEGER NOT NULL,
-  "appUserId" UUID,
-  "createdAt" TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT fk_stock_product FOREIGN KEY ("productId") REFERENCES "Product"(id),
-  CONSTRAINT fk_stock_user FOREIGN KEY ("appUserId") REFERENCES "AppUser"(id)
+  "appUserId" UUID REFERENCES "AppUser"(id) ON DELETE SET NULL,
+  "createdAt" TIMESTAMP DEFAULT NOW()
 );
 
--- Client
+-- =======================================================
+-- 🧩 Client
+-- =======================================================
 CREATE TABLE "Client" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -87,81 +95,140 @@ CREATE TABLE "Client" (
   "updatedAt" TIMESTAMP DEFAULT NOW()
 );
 
--- LoyaltyPoint
+-- =======================================================
+-- 🧩 LoyaltyPoint
+-- =======================================================
 CREATE TABLE "LoyaltyPoint" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "clientId" UUID NOT NULL,
+  "clientId" UUID NOT NULL REFERENCES "Client"(id) ON DELETE CASCADE,
   points INTEGER NOT NULL,
   reason TEXT NOT NULL,
-  "createdAt" TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT fk_loyalty_client FOREIGN KEY ("clientId") REFERENCES "Client"(id)
+  "createdAt" TIMESTAMP DEFAULT NOW()
 );
 
--- Sale
+-- =======================================================
+-- 🧩 Sale
+-- =======================================================
 CREATE TABLE "Sale" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "clientId" UUID,
-  "appUserId" UUID NOT NULL,
-  total FLOAT NOT NULL,
+  "clientId" UUID REFERENCES "Client"(id) ON DELETE SET NULL,
+  "appUserId" UUID NOT NULL REFERENCES "AppUser"(id) ON DELETE SET NULL,
+  total NUMERIC(10,2) NOT NULL,
   "paymentMethod" "PaymentMethod" NOT NULL,
   status "SaleStatus" DEFAULT 'FINALIZADA',
   synced BOOLEAN DEFAULT TRUE,
-  "createdAt" TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT fk_sale_client FOREIGN KEY ("clientId") REFERENCES "Client"(id),
-  CONSTRAINT fk_sale_user FOREIGN KEY ("appUserId") REFERENCES "AppUser"(id)
+  "createdAt" TIMESTAMP DEFAULT NOW()
 );
 
--- SaleItem
+-- =======================================================
+-- 🧩 SaleItem
+-- =======================================================
 CREATE TABLE "SaleItem" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "saleId" UUID NOT NULL,
-  "productId" UUID NOT NULL,
+  "saleId" UUID NOT NULL REFERENCES "Sale"(id) ON DELETE CASCADE,
+  "productId" UUID NOT NULL REFERENCES "Product"(id) ON DELETE CASCADE,
   quantity INTEGER NOT NULL,
-  price FLOAT NOT NULL,
-  weight FLOAT,
-  "weighingId" UUID,
-  CONSTRAINT fk_saleitem_sale FOREIGN KEY ("saleId") REFERENCES "Sale"(id),
-  CONSTRAINT fk_saleitem_product FOREIGN KEY ("productId") REFERENCES "Product"(id),
-  CONSTRAINT fk_saleitem_weighing FOREIGN KEY ("weighingId") REFERENCES "Weighing"(id)
+  price NUMERIC(10,2) NOT NULL,
+  weight NUMERIC(10,2),
+  "weighingId" UUID REFERENCES "Weighing"(id) ON DELETE SET NULL
 );
 
--- SalePayment
+
+ALTER TABLE "SaleItem"
+ADD COLUMN "loteId" UUID REFERENCES "LoteProduto"(id) ON DELETE SET NULL;
+
+
+-- =======================================================
+-- 🧩 SalePayment
+-- =======================================================
 CREATE TABLE "SalePayment" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "saleId" UUID NOT NULL,
+  "saleId" UUID NOT NULL REFERENCES "Sale"(id) ON DELETE CASCADE,
   method "PaymentMethod" NOT NULL,
-  amount FLOAT NOT NULL,
-  CONSTRAINT fk_salepayment_sale FOREIGN KEY ("saleId") REFERENCES "Sale"(id)
+  amount NUMERIC(10,2) NOT NULL
 );
 
--- FiscalDocument
+-- =======================================================
+-- 🧩 FiscalDocument
+-- =======================================================
 CREATE TABLE "FiscalDocument" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "saleId" UUID UNIQUE NOT NULL,
+  "saleId" UUID UNIQUE NOT NULL REFERENCES "Sale"(id) ON DELETE CASCADE,
   status TEXT NOT NULL,
   "receiptUrl" TEXT,
-  "createdAt" TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT fk_fiscal_sale FOREIGN KEY ("saleId") REFERENCES "Sale"(id)
+  "createdAt" TIMESTAMP DEFAULT NOW()
 );
 
--- CashRegister
+-- =======================================================
+-- 🧩 CashRegister
+-- =======================================================
 CREATE TABLE "CashRegister" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "appUserId" UUID NOT NULL,
+  "appUserId" UUID NOT NULL REFERENCES "AppUser"(id) ON DELETE SET NULL,
   "openedAt" TIMESTAMP NOT NULL,
   "closedAt" TIMESTAMP,
-  "openingAmount" FLOAT NOT NULL,
-  "closingAmount" FLOAT,
-  CONSTRAINT fk_cashregister_user FOREIGN KEY ("appUserId") REFERENCES "AppUser"(id)
+  "openingAmount" NUMERIC(10,2) NOT NULL,
+  "closingAmount" NUMERIC(10,2)
 );
 
--- CashTransaction
+-- =======================================================
+-- 🧩 CashTransaction
+-- =======================================================
 CREATE TABLE "CashTransaction" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   type "CashTransactionType" NOT NULL,
-  amount FLOAT NOT NULL,
+  amount NUMERIC(10,2) NOT NULL,
   description TEXT,
   "createdAt" TIMESTAMP DEFAULT NOW(),
-  "registerId" UUID NOT NULL,
-  CONSTRAINT fk_cashtransaction_register FOREIGN KEY ("registerId") REFERENCES "CashRegister"(id)
+  "registerId" UUID NOT NULL REFERENCES "CashRegister"(id) ON DELETE CASCADE
+);
+
+-- =======================================================
+-- 🧩 Fornecedor
+-- =======================================================
+CREATE TABLE "Fornecedor" (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  cnpj TEXT UNIQUE,
+  phone TEXT,
+  email TEXT,
+  address TEXT,
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
+-- =======================================================
+-- 🧩 PedidoCompra
+-- =======================================================
+CREATE TABLE "PedidoCompra" (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "fornecedorId" UUID NOT NULL REFERENCES "Fornecedor"(id) ON DELETE CASCADE,
+  "appUserId" UUID REFERENCES "AppUser"(id) ON DELETE SET NULL,
+  valorTotal NUMERIC(10,2) NOT NULL DEFAULT 0,
+  "numeroNota" TEXT,
+  status TEXT DEFAULT 'FINALIZADA',
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
+-- =======================================================
+-- 🧩 LoteProduto
+-- =======================================================
+CREATE TABLE "LoteProduto" (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "productId" UUID NOT NULL REFERENCES "Product"(id) ON DELETE CASCADE,
+  "batchNumber" TEXT NOT NULL,
+  quantity INTEGER NOT NULL,
+  "expirationDate" DATE,
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
+-- =======================================================
+-- 🧩 ItemCompra
+-- =======================================================
+CREATE TABLE "ItemCompra" (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "pedidoCompraId" UUID NOT NULL REFERENCES "PedidoCompra"(id) ON DELETE CASCADE,
+  "productId" UUID NOT NULL REFERENCES "Product"(id) ON DELETE CASCADE,
+  quantity INTEGER NOT NULL,
+  "unitCost" NUMERIC(10,2) NOT NULL,
+  "totalCost" NUMERIC(10,2) GENERATED ALWAYS AS (quantity * "unitCost") STORED
 );

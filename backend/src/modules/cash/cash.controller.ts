@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as cashService from './cash.service.js';
+import * as stockService from '../stock/stock.service.js';
 
 interface UsuarioDecoded {
   id: string;
@@ -49,12 +50,23 @@ export const registrarVenda = async (
 
     if (!userId || !Array.isArray(items) || !Array.isArray(payments)) {
       res.status(400).json({ message: 'Dados inválidos.' });
-      return
+      return;
     }
 
+    // 1️⃣ Registrar venda no caixa (função abaixo já trata FIADO)
     const venda = await cashService.registrarVenda(userId, clientId, items, payments);
+
+    // 2️⃣ Ajustar estoque automaticamente (saída por VENDA)
+    for (const item of items) {
+      await stockService.createMovement({
+        productId: item.productId,
+        quantity: item.quantity,
+        type: 'VENDA',
+        userId
+      });
+    }
+
     res.status(201).json(venda);
-    return;
   } catch (err) {
     next(err);
   }
@@ -78,6 +90,46 @@ export const getResumoCaixa = async (req: Request, res: Response, next: NextFunc
     res.json(resumo);
     return;
   } catch (err) {
+    next(err);
+  }
+};
+
+
+export const cancelarVenda = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { saleId } = req.params;
+    const userRole = req.usuario?.role; // middleware authMiddleware deve popular req.user
+
+    const result = await cashService.cancelarVenda(saleId, userRole);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const cancelarItem = async (
+  req: Request & { usuario?: { id: string; role: string } },
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { saleId, itemId } = req.params;
+    const userRole = req.usuario?.role;
+
+    if (!userRole) {
+      res.status(401).json({ message: 'Usuário não autenticado.' });
+      return;
+    }
+
+    const result = await cashService.cancelarItemVenda({
+      saleId,
+      saleItemId: itemId,
+      userRole
+    });
+
+    res.status(200).json(result);
+    return;
+  } catch (err: any) {
     next(err);
   }
 };

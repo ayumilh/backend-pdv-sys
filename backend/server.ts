@@ -7,11 +7,15 @@ import cookieParser from "cookie-parser";
 
 import authRoutes from "./src/modules/auth/auth.routes.js";
 import usuariosRoutes from "./src/modules/usuarios/usuarios.routes.js";
+import fiadoRoutes from './src/modules/fiado/fiado.routes.js';
 import userRoutes from "./src/modules/user/user.routes.js";
 import productsRoutes from "./src/modules/product/product.routes.js";
 import categorysRoutes from "./src/modules/category/category.routes.js";
 import stockRoutes from "./src/modules/stock/stock.routes.js";
 import cashRoutes from "./src/modules/cash/cash.routes.js";
+import loteProdutoRoutes from "./src/modules/loteProduto/loteProduto.routes.js";
+import fornecedorRoutes from "./src/modules/fornecedor/fornecedor.routes.js";
+import relatoriosRoutes from "./src/modules/relatorios/relatorios.routes.js";
 
 import { errorMiddleware } from "./src/shared/middleware/errorMiddleware.js";
 
@@ -44,6 +48,11 @@ app.use("/categories", categorysRoutes);
 app.use("/stock", stockRoutes);
 app.use("/cash", cashRoutes);
 app.use('/userauth', authRoutes, userRoutes);
+app.use('/fiado', fiadoRoutes);
+app.use('/fornecedor', fornecedorRoutes);
+app.use('/loteProduto', loteProdutoRoutes);
+app.use("/api/relatorios", relatoriosRoutes);
+
 
 app.use(errorMiddleware);
 

@@ -29,24 +29,47 @@ export const getMovementById = async (id: string) => {
   return result.rows[0] || null;
 };
 
+
 export const createMovement = async ({ productId, quantity, type, userId }: CreateMovementDTO) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    const movement = await client.query(`
+    // 🔎 1. Busca o estoque atual do produto
+    const { rows } = await client.query(
+      'SELECT stock FROM "Product" WHERE id = $1 FOR UPDATE',
+      [productId]
+    );
+    if (rows.length === 0) throw new Error('Produto não encontrado.');
+
+    const currentStock = Number(rows[0].stock);
+
+    // 🚫 2. Impede saída maior que o estoque disponível
+    if ((type === 'SAIDA' || type === 'VENDA') && currentStock < quantity) {
+      throw new Error('Estoque insuficiente para realizar esta operação.');
+    }
+
+    // 📦 3. Cria o movimento
+    const movement = await client.query(
+      `
       INSERT INTO "StockMovement" ("productId", quantity, type, "appUserId", "createdAt")
       VALUES ($1, $2, $3, $4, NOW())
       RETURNING *
-    `, [productId, quantity, type, userId]);
+      `,
+      [productId, quantity, type, userId]
+    );
 
+    // 🔁 4. Atualiza o estoque conforme o tipo
     const stockChange = type === 'ENTRADA' ? quantity : -quantity;
 
-    await client.query(`
+    await client.query(
+      `
       UPDATE "Product"
       SET stock = stock + $1
       WHERE id = $2
-    `, [stockChange, productId]);
+      `,
+      [stockChange, productId]
+    );
 
     await client.query('COMMIT');
     return movement.rows[0];
@@ -57,6 +80,7 @@ export const createMovement = async ({ productId, quantity, type, userId }: Crea
     client.release();
   }
 };
+
 
 export const getMovementsByProduct = async (productId: string) => {
   const result = await pool.query(`
