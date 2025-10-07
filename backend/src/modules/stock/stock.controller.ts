@@ -1,14 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as stockService from './stock.service.js';
 
-interface UsuarioDecoded {
-  id: string;
-  name: string;
-  email?: string;
-  role: string;
-}
-
-
 export const listMovements = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const movements = await stockService.getAllMovements();
@@ -24,7 +16,6 @@ export const getMovementById = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    console.log('Fetching movement with ID:', req.params.id);
     const movement = await stockService.getMovementById(req.params.id);
     if (!movement) {
       res.status(404).json({ message: 'Movimentação não encontrada' });
@@ -37,14 +28,14 @@ export const getMovementById = async (
 };
 
 export const createMovement = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const usuario = req.usuario;
+    const user = req.user;
 
-    if (!usuario || (usuario.role !== 'ADMIN' && usuario.role !== 'ESTOQUISTA')) {
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'ESTOQUISTA')) {
       res.status(403).json({ message: 'Sem permissão para criar movimentação.' });
       return;
     }
@@ -71,7 +62,7 @@ export const createMovement = async (
       productId,
       quantity,
       type,
-      userId: usuario.id,
+      userId: user.id,
     });
 
     res.status(201).json(movement);
@@ -88,14 +79,14 @@ export const createMovement = async (
 
 
 export const deleteMovement = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const usuario = req.usuario;
+    const user = req.user;
 
-    if (!usuario || usuario.role !== 'ADMIN') {
+    if (!user || user.role !== 'ADMIN') {
       res.status(403).json({ message: 'Sem permissão para deletar movimentações.' });
       return;
     }

@@ -13,6 +13,38 @@ interface FiltrosCompras {
   fornecedorId?: string;
 }
 
+// ✅ Dashboard Resumo
+export const dashboardResumo = async (userId: string) => {
+  const hoje = new Date().toISOString().split("T")[0];
+
+  // 🔥 Filtro de vendas do usuário logado
+  const { totalGeral } = await relatoriosVendas({
+    dataInicio: `${hoje}T00:00:00Z`,
+    dataFim: `${hoje}T23:59:59Z`,
+    userId, // ✅ filtra pelas vendas desse usuário
+  });
+
+  // 📦 Total de produtos
+  const produtos = await pool.query(`SELECT COUNT(*) FROM "Product"`);
+  // 👤 Total de usuários
+  const usuarios = await pool.query(`SELECT COUNT(*) FROM "AppUser"`);
+  // 🏷️ Total de categorias
+  const categorias = await pool.query(`SELECT COUNT(*) FROM "Category"`);
+
+  console.log('Resumo do Dashboard:', {
+    vendasHoje: Number(totalGeral || 0),
+    produtos: Number(produtos.rows[0].count),
+    usuarios: Number(usuarios.rows[0].count),
+    categorias: Number(categorias.rows[0].count),
+  });
+  return {
+    vendasHoje: Number(totalGeral || 0),
+    produtos: Number(produtos.rows[0].count),
+    usuarios: Number(usuarios.rows[0].count),
+    categorias: Number(categorias.rows[0].count),
+  };
+};
+
 // ✅ Relatório de Vendas
 export const relatoriosVendas = async (filtros: FiltrosVendas) => {
   const params: any[] = [];
@@ -30,36 +62,32 @@ export const relatoriosVendas = async (filtros: FiltrosVendas) => {
     params.push(filtros.userId);
     condicoes.push(`s."appUserId" = $${params.length}`);
   }
-  if (filtros.productId) {
-    params.push(filtros.productId);
-    condicoes.push(`si."productId" = $${params.length}`);
-  }
 
   const where = condicoes.length ? `WHERE ${condicoes.join(" AND ")}` : "";
 
   const result = await pool.query(
     `
-    SELECT
-      s.id AS "saleId",
-      s."createdAt",
-      s."total",
-      s."paymentMethod",
-      u.username AS "vendedor",
-      p.name AS "produto",
-      si.quantity,
-      si.price,
-      (si.quantity * si.price) AS "subtotal"
-    FROM "Sale" s
-    JOIN "SaleItem" si ON si."saleId" = s.id
-    JOIN "Product" p ON p.id = si."productId"
-    LEFT JOIN "AppUser" u ON u.id = s."appUserId"
-    ${where}
-    ORDER BY s."createdAt" DESC;
-    `,
+  SELECT
+    s.id AS "saleId",
+    s."createdAt",
+    s."total",
+    s."paymentMethod",
+    u."email" AS "vendedor",  -- ✅ vem da tabela User
+    p.name AS "produto",
+    si.quantity,
+    si.price,
+    (si.quantity * si.price) AS "subtotal"
+  FROM "Sale" s
+  JOIN "SaleItem" si ON si."saleId" = s.id
+  JOIN "Product" p ON p.id = si."productId"
+  LEFT JOIN "AppUser" au ON au.id = s."appUserId"
+  LEFT JOIN "user" u ON u.id = au."userId"   -- ✅ relaciona com tabela User
+  ${where}
+  ORDER BY s."createdAt" DESC;
+  `,
     params
   );
 
-  // Totalizador
   const total = result.rows.reduce((acc, r) => acc + Number(r.subtotal), 0);
   return { totalGeral: total, quantidade: result.rows.length, vendas: result.rows };
 };

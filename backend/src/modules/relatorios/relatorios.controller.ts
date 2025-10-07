@@ -7,6 +7,26 @@ interface UsuarioDecoded {
   name: string;
 }
 
+// ✅ Dashboard Resumo
+export const dashboardResumo = async (
+  req: Request & { user?: { id: string; role: string } },
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: "Usuário não autenticado." });
+      return;
+    }
+
+    const data = await relatoriosService.dashboardResumo(req.user.id);
+    console.log('Dados do Dashboard:', data);
+    res.status(200).json(data);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ✅ Vendas
 export const relatoriosVendas = async (
   req: Request & { usuario?: UsuarioDecoded },

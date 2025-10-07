@@ -7,6 +7,7 @@ const router = Router();
 router.use(authMiddleware);
 
 // Relatórios gerais
+router.get("/dashboard", relatoriosController.dashboardResumo);
 router.get("/vendas", relatoriosController.relatoriosVendas);
 router.get("/estoque", relatoriosController.relatoriosEstoque);
 router.get("/compras", relatoriosController.relatoriosCompras);
