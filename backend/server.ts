@@ -51,7 +51,7 @@ app.use('/userauth', authRoutes, userRoutes);
 app.use('/fiado', fiadoRoutes);
 app.use('/fornecedor', fornecedorRoutes);
 app.use('/loteProduto', loteProdutoRoutes);
-app.use("/api/relatorios", relatoriosRoutes);
+app.use("/relatorios", relatoriosRoutes);
 
 
 app.use(errorMiddleware);

@@ -2,23 +2,16 @@ import { Request, Response, NextFunction } from "express";
 import * as productService from "./product.service.js";
 import * as stockService from "../stock/stock.service.js";
 
-interface UsuarioDecoded {
-  id: string;
-  name: string;
-  email?: string;
-  role: string;
-}
-
 // Lista produtos
 export const listProducts = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const usuario = req.usuario;
+    const user = req.user;
 
-    if (!usuario || (usuario.role !== "ADMIN" && usuario.role !== "ESTOQUISTA" && usuario.role !== "CAIXA")) {
+    if (!user || (user.role !== "ADMIN" && user.role !== "ESTOQUISTA" && user.role !== "CAIXA")) {
       res.status(403).json({ message: "Você não tem permissão para visualizar produtos." });
       return;
     }
@@ -33,12 +26,12 @@ export const listProducts = async (
 
 // Get único produto
 export const getProduct = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const usuario = req.usuario;
+    const usuario = req.user;
 
     if (!usuario) {
       res.status(403).json({ message: "Você não tem permissão para visualizar produtos." });
@@ -58,13 +51,12 @@ export const getProduct = async (
 };
 
 export const createProduct = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const usuario = req.usuario;
-
+    const usuario = req.user;
     if (!usuario || (usuario.role !== 'ADMIN' && usuario.role !== 'ESTOQUISTA')) {
       res.status(403).json({ message: 'Você não tem permissão para criar produtos.' });
       return
@@ -99,12 +91,12 @@ export const createProduct = async (
 };
 
 export const createMovementForProduct = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const usuario = req.usuario;
+    const usuario = req.user;
 
     if (!usuario || (usuario.role !== 'ADMIN' && usuario.role !== 'ESTOQUISTA')) {
       res.status(403).json({ message: 'Sem permissão para movimentar estoque.' });
@@ -134,7 +126,7 @@ export const createMovementForProduct = async (
 };
 
 export const getMovementsByProduct = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
@@ -151,12 +143,12 @@ export const getMovementsByProduct = async (
 
 // Atualiza produto
 export const updateProduct = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const usuario = req.usuario;
+    const usuario = req.user;
 
     if (!usuario || (usuario.role !== "ADMIN" && usuario.role !== "ESTOQUISTA")) {
       res.status(403).json({ message: "Você não tem permissão para atualizar produtos." });
@@ -172,12 +164,12 @@ export const updateProduct = async (
 
 // Deleta produto
 export const deleteProduct = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const usuario = req.usuario;
+    const usuario = req.user;
 
     if (!usuario || (usuario.role !== "ADMIN" && usuario.role !== "ESTOQUISTA")) {
       res.status(403).json({ message: "Você não tem permissão para deletar produtos." });

@@ -12,12 +12,13 @@ CREATE TYPE "CashTransactionType" AS ENUM ('ABERTURA', 'FECHAMENTO', 'VENDA', 'S
 -- =======================================================
 CREATE TABLE "AppUser" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  username TEXT UNIQUE NOT NULL,  -- nome de usuário interno
-  password TEXT NOT NULL,          -- senha (criptografada)
   role "UserRole" NOT NULL,
   "createdAt" TIMESTAMP DEFAULT NOW(),
   "updatedAt" TIMESTAMP DEFAULT NOW()
 );
+
+ALTER TABLE "AppUser"
+ADD COLUMN "userId" TEXT UNIQUE REFERENCES "user"(id);
 
 -- =======================================================
 -- 🧩 Category

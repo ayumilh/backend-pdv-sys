@@ -84,9 +84,14 @@ export const createMovement = async ({ productId, quantity, type, userId }: Crea
 
 export const getMovementsByProduct = async (productId: string) => {
   const result = await pool.query(`
-    SELECT m.*, u.name AS user_name
+    SELECT 
+      m.*, 
+      u."name" AS user_name,
+      u."email" AS user_email,
+      au."role" AS user_role
     FROM "StockMovement" m
-    LEFT JOIN "AppUser" u ON m."appUserId" = u.id
+    LEFT JOIN "AppUser" au ON m."appUserId" = au.id
+    LEFT JOIN "user" u ON au."userId" = u.id
     WHERE m."productId" = $1
     ORDER BY m."createdAt" DESC
   `, [productId]);

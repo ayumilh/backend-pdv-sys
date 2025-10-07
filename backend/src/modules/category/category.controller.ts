@@ -1,12 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as categoryService from './category.service.js';
 
-interface UsuarioDecoded {
-  id: string;
-  name: string;
-  email?: string;
-  role: string;
-}
 
 export const list = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -31,15 +25,15 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const createCategory = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const usuario = req.usuario;
+    const user = req.user;
 
     // Só ADMIN pode criar categoria
-    if (!usuario || usuario.role !== "ADMIN") {
+    if (!user || user.role !== "ADMIN") {
       res.status(403).json({ message: "Você não tem permissão para criar categorias." });
       return;
     }
