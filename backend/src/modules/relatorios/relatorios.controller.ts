@@ -20,7 +20,6 @@ export const dashboardResumo = async (
     }
 
     const data = await relatoriosService.dashboardResumo(req.user.id);
-    console.log('Dados do Dashboard:', data);
     res.status(200).json(data);
   } catch (err) {
     next(err);
@@ -29,7 +28,7 @@ export const dashboardResumo = async (
 
 // ✅ Vendas
 export const relatoriosVendas = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {

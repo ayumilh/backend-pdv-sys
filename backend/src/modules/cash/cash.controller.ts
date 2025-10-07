@@ -2,19 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import * as cashService from './cash.service.js';
 import * as stockService from '../stock/stock.service.js';
 
-interface UsuarioDecoded {
-  id: string;
-  role: string;
-}
-
 export const abrirCaixa = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { openingAmount } = req.body;
-    const userId = req.usuario?.id;
+    const userId = req.user?.id;
 
     if (!userId || typeof openingAmount !== 'number') {
       res.status(400).json({ message: 'Dados inválidos.' });
@@ -39,14 +34,51 @@ export const fecharCaixa = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+// 3. Verificar se o Caixa está Aberto
+export const checkCaixaAberto = async (req: Request & { user?: { id: string } }, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user?.id) {
+      res.status(400).json({ message: 'ID do usuário não fornecido.' });
+      return;
+    }
+
+    // Verifica se o caixa está aberto
+    const result = await cashService.checkCaixaAberto(req.user.id);
+    console.log('Resultado da verificação do caixa:', result); // Log do resultado
+    if (result) {
+      res.json({ aberto: true });
+    } else {
+      res.json({ aberto: false });
+    }
+  } catch (error) {
+    console.error('Erro ao verificar caixa:', error);
+    next(error);
+  }
+};
+// Obtém o último valor de abertura do caixa
+export const getUltimoValorAbertura = async (  req: Request & { user?: { id: string; role: string } }, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(400).json({ message: 'ID do usuário não fornecido.' });
+      return;
+    }
+    const lastAmount = await cashService.getUltimoValorAbertura(userId);
+    res.json({ lastAmount });
+  } catch (error) {
+    console.error('Erro ao buscar último valor de abertura:', error);
+    next(error);
+  }
+};
+
 export const registrarVenda = async (
-  req: Request & { usuario?: UsuarioDecoded },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { clientId, items, payments } = req.body;
-    const userId = req.usuario?.id;
+    const userId = req.user?.id;
 
     if (!userId || !Array.isArray(items) || !Array.isArray(payments)) {
       res.status(400).json({ message: 'Dados inválidos.' });
@@ -108,13 +140,13 @@ export const cancelarVenda = async (req: Request, res: Response, next: NextFunct
 };
 
 export const cancelarItem = async (
-  req: Request & { usuario?: { id: string; role: string } },
+  req: Request & { user?: { id: string; role: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { saleId, itemId } = req.params;
-    const userRole = req.usuario?.role;
+    const userRole = req.user?.role;
 
     if (!userRole) {
       res.status(401).json({ message: 'Usuário não autenticado.' });

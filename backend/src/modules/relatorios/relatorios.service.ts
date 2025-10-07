@@ -31,12 +31,6 @@ export const dashboardResumo = async (userId: string) => {
   // 🏷️ Total de categorias
   const categorias = await pool.query(`SELECT COUNT(*) FROM "Category"`);
 
-  console.log('Resumo do Dashboard:', {
-    vendasHoje: Number(totalGeral || 0),
-    produtos: Number(produtos.rows[0].count),
-    usuarios: Number(usuarios.rows[0].count),
-    categorias: Number(categorias.rows[0].count),
-  });
   return {
     vendasHoje: Number(totalGeral || 0),
     produtos: Number(produtos.rows[0].count),

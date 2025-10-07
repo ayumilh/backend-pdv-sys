@@ -10,21 +10,21 @@ interface UsuarioDecoded {
 
 export const userController = {
     async create(
-        req: Request & { usuario?: UsuarioDecoded },
+        req: Request & { user?: { id: string; role: string } },
         res: Response,
         next: NextFunction
     ) {
         try {
-            const usuario = req.usuario;
+            const user = req.user;
 
-            if (!usuario || usuario.role !== 'ADMIN') {
+            if (!user || user.role !== 'ADMIN') {
                 res.status(403).json({ message: 'Apenas administradores podem criar usuários.' });
                 return;
             }
 
             const { name, email, password, role } = req.body;
-            const user = await userService.create({ name, email, password, role });
-            res.status(201).json(user);
+            const userData = await userService.create({ name, email, password, role });
+            res.status(201).json(userData);
             return;
         } catch (error) {
             next(error);
@@ -32,22 +32,22 @@ export const userController = {
     },
 
     async update(
-        req: Request & { usuario?: UsuarioDecoded },
+          req: Request & { user?: { id: string; role: string } },
         res: Response,
         next: NextFunction
     ) {
         try {
-            const usuario = req.usuario;
+            const user = req.user;
 
-            if (!usuario || usuario.role !== 'ADMIN') {
+            if (!user || user.role !== 'ADMIN') {
                 res.status(403).json({ message: 'Apenas administradores podem editar usuários.' });
                 return;
             }
 
             const { id } = req.params;
             const { name, email, password, role } = req.body;
-            const user = await userService.update(id, { name, email, password, role });
-            res.json(user);
+            const data = await userService.update(id, { name, email, password, role });
+            res.json(data);
             return;
         } catch (error) {
             next(error);
@@ -55,14 +55,14 @@ export const userController = {
     },
 
     async getAll(
-        req: Request & { usuario?: UsuarioDecoded },
+          req: Request & { user?: { id: string; role: string } },
         res: Response,
         next: NextFunction
     ) {
         try {
-            const usuario = req.usuario;
+            const user = req.user;
 
-            if (!usuario || usuario.role !== 'ADMIN') {
+            if (!user || user.role !== 'ADMIN') {
                 res.status(403).json({ message: 'Apenas administradores podem visualizar usuários.' });
                 return;
             }
@@ -76,27 +76,27 @@ export const userController = {
     },
 
     async getById(
-        req: Request & { usuario?: UsuarioDecoded },
+        req: Request & { user?: { id: string; role: string } },
         res: Response,
         next: NextFunction
     ) {
         try {
             const { id } = req.params;
 
-            const usuario = req.usuario;
-            if (!usuario || usuario.role !== 'ADMIN') {
+            const user = req.user;
+            if (!user || user.role !== 'ADMIN') {
                 res.status(403).json({ message: 'Apenas administradores podem visualizar dados de usuários.' });
                 return;
             }
 
-            const user = await userService.getById(id);
+            const userData = await userService.getById(id);
 
-            if (!user) {
+            if (!userData) {
                 res.status(404).json({ message: 'Usuário não encontrado.' });
                 return;
             }
 
-            res.json(user);
+            res.json(userData);
             return;
         } catch (error) {
             next(error);
@@ -105,15 +105,15 @@ export const userController = {
 
 
     async getMovimentacoes(
-        req: Request & { usuario?: UsuarioDecoded },
+          req: Request & { user?: { id: string; role: string } },
         res: Response,
         next: NextFunction
     ) {
         try {
-            const usuario = req.usuario;
+            const user = req.user;
             const { id } = req.params;
 
-            if (!usuario || usuario.role !== 'ADMIN') {
+            if (!user || user.role !== 'ADMIN') {
                 res.status(403).json({ message: 'Apenas administradores podem visualizar movimentações.' });
                 return;
             }
@@ -127,15 +127,15 @@ export const userController = {
     },
 
     async delete(
-        req: Request & { usuario?: UsuarioDecoded },
+          req: Request & { user?: { id: string; role: string } },
         res: Response,
         next: NextFunction
     ) {
         try {
-            const usuario = req.usuario;
+            const user = req.user;
             const { id } = req.params;
 
-            if (!usuario || usuario.role !== 'ADMIN') {
+            if (!user || user.role !== 'ADMIN') {
                 res.status(403).json({ message: 'Apenas administradores podem deletar usuários.' });
                 return;
             }
@@ -161,22 +161,22 @@ export const userController = {
     },
 
     checkEmailExists: async (req: Request, res: Response) => {
-    const { email } = req.body;
+        const { email } = req.body;
 
-    if (!email || typeof email !== 'string') {
-      res.status(400).json({ error: 'E-mail inválido' });
-      return;
-    }
+        if (!email || typeof email !== 'string') {
+            res.status(400).json({ error: 'E-mail inválido' });
+            return;
+        }
 
-    try {
-      const exists = await userService.emailExists(email);
-      res.status(200).json({ exists });
-      return;
-    } catch (error) {
-      console.error('Erro ao verificar e-mail:', error);
-      res.status(500).json({ error: 'Erro interno do servidor' });
-      return;
+        try {
+            const exists = await userService.emailExists(email);
+            res.status(200).json({ exists });
+            return;
+        } catch (error) {
+            console.error('Erro ao verificar e-mail:', error);
+            res.status(500).json({ error: 'Erro interno do servidor' });
+            return;
+        }
     }
-  }
 
 };

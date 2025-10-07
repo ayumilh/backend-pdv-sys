@@ -8,27 +8,43 @@ interface CancelItemDTO {
 }
 
 // 1. Abrir Caixa
+// 1. Abrir Caixa
 export const abrirCaixa = async (userId: string, openingAmount: number) => {
   const client = await pool.connect();
   try {
+    // Verifica se já existe um caixa aberto
+    const caixaAbertoResult = await client.query(
+      `SELECT * FROM "CashRegister" WHERE "appUserId" = $1 AND "status" = 'ABERTO' LIMIT 1`,
+      [userId]
+    );
+
+    if (caixaAbertoResult.rows.length > 0) {
+      throw new Error('Já existe um caixa aberto para este operador.');
+    }
+
+    // Inicia a transação de abertura do caixa
     await client.query('BEGIN');
 
+    // Insere o novo caixa
     const caixaResult = await client.query(
-      `INSERT INTO "CashRegister" ("appUserId", "openingAmount", "openedAt") 
-       VALUES ($1, $2, NOW()) RETURNING *`,
+      `INSERT INTO "CashRegister" ("appUserId", "openingAmount", "openedAt", "status") 
+       VALUES ($1, $2, NOW(), 'ABERTO') RETURNING *`,
       [userId, openingAmount]
     );
 
     const caixaId = caixaResult.rows[0].id;
 
+    // Registra a transação de abertura no caixa
     await client.query(
       `INSERT INTO "CashTransaction" ("registerId", type, amount, description, "createdAt") 
        VALUES ($1, 'ABERTURA', $2, 'Abertura de caixa', NOW())`,
       [caixaId, openingAmount]
     );
 
+    // Finaliza a transação
     await client.query('COMMIT');
-    return caixaResult.rows[0];
+
+    return caixaResult.rows[0]; // Retorna o caixa aberto
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -37,28 +53,43 @@ export const abrirCaixa = async (userId: string, openingAmount: number) => {
   }
 };
 
+
 // 2. Fechar Caixa
 export const fecharCaixa = async (registerId: string, closingAmount: number) => {
   const client = await pool.connect();
   try {
+    // Verifica se o caixa existe e está aberto
+    const caixaResult = await client.query(
+      `SELECT * FROM "CashRegister" WHERE id = $1 AND "status" = 'ABERTO' LIMIT 1`,
+      [registerId]
+    );
+
+    if (caixaResult.rows.length === 0) {
+      throw new Error('Caixa não encontrado ou já fechado.');
+    }
+
     await client.query('BEGIN');
 
+    // Atualiza o caixa, fechando-o
     const result = await client.query(
       `UPDATE "CashRegister" 
-       SET "closingAmount" = $1, "closedAt" = NOW() 
+       SET "closingAmount" = $1, "closedAt" = NOW(), "status" = 'FECHADO' 
        WHERE id = $2 
        RETURNING *`,
       [closingAmount, registerId]
     );
 
+    // Registra a transação de fechamento
     await client.query(
       `INSERT INTO "CashTransaction" ("registerId", type, amount, description, "createdAt") 
        VALUES ($1, 'FECHAMENTO', $2, 'Fechamento de caixa', NOW())`,
       [registerId, closingAmount]
     );
 
+    // Finaliza a transação
     await client.query('COMMIT');
-    return result.rows[0];
+
+    return result.rows[0]; // Retorna o caixa fechado
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -66,6 +97,8 @@ export const fecharCaixa = async (registerId: string, closingAmount: number) => 
     client.release();
   }
 };
+
+
 
 // 3. Registrar Venda
 export const registrarVenda = async (
@@ -172,6 +205,38 @@ export const registrarVenda = async (
     client.release();
   }
 };
+
+// Verifica se o caixa está aberto para o usuário
+export const checkCaixaAberto = async (userId: string) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM "CashRegister" WHERE "appUserId" = $1 AND "status" = 'ABERTO' ORDER BY "openedAt" DESC LIMIT 1`,
+      [userId]
+    );
+
+    // Verifica se existe um caixa aberto para o usuário
+    return result.rows.length > 0; 
+  } catch (error) {
+    console.error('Erro ao verificar caixa no banco de dados:', error);
+    throw new Error('Erro ao verificar caixa no banco de dados');
+  }
+};
+
+// Obtém o último valor de abertura do caixa para o usuário
+export const getUltimoValorAbertura = async (userId: string) => {
+  try {
+    const result = await pool.query(
+      `SELECT "openingAmount" FROM "CashRegister" WHERE "appUserId" = $1 ORDER BY "openedAt" DESC LIMIT 1`,
+      [userId]
+    );
+    return result.rows.length > 0 ? result.rows[0].openingAmount : 0;
+  } catch (error) {
+    console.error('Erro ao buscar último valor de abertura no banco:', error);
+    throw new Error('Erro ao buscar último valor de abertura no banco de dados');
+  }
+};
+
+
 
 
 // 4. Registrar Transação

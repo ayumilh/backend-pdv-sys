@@ -25,8 +25,6 @@ export const listProducts = async (categoryId?: string, search?: string) => {
     ORDER BY p."createdAt" DESC
   `, values);
 
-  console.log(result.rows);
-
   return result.rows;
 };
 
@@ -53,7 +51,6 @@ export const createProduct = async (data: {
   categoryId?: string | null;
   userId: string;
 }) => {
-  console.log(data);
   if (data.price < 0) throw new Error("Preço deve ser maior ou igual a zero.");
   if (data.stock < 0) throw new Error("Estoque não pode ser negativo.");
 
